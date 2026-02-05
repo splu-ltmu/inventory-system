@@ -1,0 +1,13 @@
+.git
+.github
+.gitignore
+node_modules
+/vendor
+.env.local
+.env.*.local
+.DS_Store
+.vscode
+.idea
+*.log
+*.pem
+.env
