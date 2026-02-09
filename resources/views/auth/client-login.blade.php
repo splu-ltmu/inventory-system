@@ -82,36 +82,6 @@
         letter-spacing:1px;
     }
 
-    .switch-login{
-        text-align:center;
-        margin-top:24px;
-        padding-top:20px;
-        border-top:1px solid var(--line);
-    }
-
-    .switch-login-label{
-        display:block;
-        color:var(--muted);
-        font-size:13px;
-        margin-bottom:10px;
-    }
-
-    .switch-login a{
-        display:inline-block;
-        padding:8px 16px;
-        background:var(--blue-soft);
-        color:var(--blue);
-        text-decoration:none;
-        border-radius:6px;
-        font-weight:700;
-        font-size:13px;
-        transition:background .2s;
-    }
-
-    .switch-login a:hover{
-        background:rgba(37,99,235,.18);
-    }
-
     .login-header{
         text-align:center;
         margin-bottom:32px;
@@ -224,7 +194,7 @@
             <div class="error-message">{{ session('error') }}</div>
         @endif
 
-        <form method="POST" action="{{ route('client.login.submit') }}">
+        <form method="POST" action="{{ route('client.login.submit') }}" onsubmit="showLoading('Signing in...')">
             @csrf
 
             <div class="form-group">
@@ -242,12 +212,27 @@
 
         <div class="login-footer">
             <p style="text-align: center;"><a href="{{ route('password-reset.request') }}">Forgot your password?</a></p>
-
-            <div class="switch-login">
-                <span class="switch-login-label">Login as Admin?</span>
-                <a href="{{ route('admin.login') }}">Switch to Admin Login</a>
-            </div>
         </div>
     </div>
+    <!-- Loading overlay for login page -->
+    <div id="global-loading" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:rgba(255,255,255,0.98); padding:18px 20px; border-radius:12px; display:flex; gap:12px; align-items:center; box-shadow:0 8px 30px rgba(2,6,23,.4);">
+            <div style="width:28px; height:28px; border-radius:50%; border:3px solid rgba(0,0,0,.08); border-top-color: #2563eb; animation: spin 1s linear infinite;"></div>
+            <div style="font-weight:700; color: #0f172a;" id="loading-message">Signing in...</div>
+        </div>
+    </div>
+
+    <style>@keyframes spin{ to { transform: rotate(360deg); } }</style>
+
+    <script>
+    function showLoading(msg){
+        var overlay = document.getElementById('global-loading');
+        var m = document.getElementById('loading-message');
+        if(m) m.textContent = msg || 'Loading...';
+        if(overlay) overlay.style.display = 'flex';
+    }
+    function hideLoading(){ var overlay = document.getElementById('global-loading'); if(overlay) overlay.style.display = 'none'; }
+    window.addEventListener('pageshow', function(){ hideLoading(); });
+    </script>
 </body>
 </html>

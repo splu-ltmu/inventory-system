@@ -114,6 +114,10 @@
         margin-top:18px;
         padding-top:14px;
         border-top:1px solid var(--line);
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 18px;
     }
 
     .logout-btn{
@@ -272,6 +276,17 @@
             padding:12px;
             min-height:auto;
         }
+
+        /* On small screens make logout appear inline in the sidebar so it's visible */
+        .sidebar-footer{
+            position: relative;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            margin-top:18px;
+            padding-top:14px;
+            border-top:1px solid var(--line);
+        }
     }
 
     @media (max-width: 480px){
@@ -309,6 +324,13 @@
             padding:10px;
         }
     }
+
+    /* Global loading overlay */
+    #global-loading{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center; }
+    #global-loading .loading-box{ background: rgba(255,255,255,0.98); padding:18px 20px; border-radius:12px; display:flex; gap:12px; align-items:center; box-shadow:0 8px 30px rgba(2,6,23,.4); }
+    #global-loading .spinner{ width:28px; height:28px; border-radius:50%; border:3px solid rgba(0,0,0,.08); border-top-color:var(--blue); animation: spin 1s linear infinite; }
+    @keyframes spin{ to { transform: rotate(360deg); } }
+    #global-loading .msg{ color:var(--text); font-weight:700; }
 </style>
 
 </head>
@@ -334,7 +356,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ route('logout') }}" onsubmit="showLoading('Logging out...')">
                 @csrf
                 <button class="logout-btn" type="submit">Logout</button>
             </form>
@@ -378,6 +400,30 @@ document.addEventListener('DOMContentLoaded', function(){
         });
     }, 3000);
 });
+</script>
+
+<!-- Global loading overlay -->
+<div id="global-loading" aria-hidden="true">
+    <div class="loading-box" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="msg" id="loading-message">Loading...</div>
+    </div>
+</div>
+
+<script>
+function showLoading(msg){
+    var overlay = document.getElementById('global-loading');
+    var m = document.getElementById('loading-message');
+    if(m) m.textContent = msg || 'Loading...';
+    if(overlay) overlay.style.display = 'flex';
+}
+function hideLoading(){
+    var overlay = document.getElementById('global-loading');
+    if(overlay) overlay.style.display = 'none';
+}
+
+// Optionally hide overlay after navigation (in case browser doesn't submit synchronously)
+window.addEventListener('pageshow', function(){ hideLoading(); });
 </script>
 
 </body>

@@ -146,8 +146,9 @@
         color:#0f172a;
         cursor:pointer;
         font-weight:700;
+        transition: background-color .2s, border-color .2s, color .2s;
     }
-    .btn-ghost:hover{ background:#f8fafc; }
+    .btn-ghost:hover{ background:#eff6ff; border-color:#2563eb; color:#2563eb; }
 
     input[type="number"], input[type="text"], select{
         padding:8px 10px;
@@ -159,6 +160,22 @@
         width:100%;
     }
     input:focus, select:focus{ border-color:#93c5fd; }
+    /* Spinner and no-results */
+    #search-spinner{ border:3px solid rgba(0,0,0,0.08); border-top-color:rgba(37,99,235,0.9); border-radius:50%; width:20px; height:20px; display:inline-block; animation:spin 1s linear infinite; }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+    .no-results{ padding:18px; text-align:center; color:#64748b; background:transparent; border-radius:8px; margin-top:8px; }
+    /* Confirmation modal */
+    #confirmModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:5000; align-items:center; justify-content:center; }
+    #confirmModal.show{ display:flex; }
+    .modal-box{ background:#fff; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.25); max-width:420px; width:90%; padding:24px; }
+    .modal-box h3{ margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800; }
+    .modal-box p{ margin:0 0 20px 0; color:#475569; font-size:14px; line-height:1.5; }
+    .modal-box .modal-buttons{ display:flex; gap:10px; justify-content:flex-end; }
+    .modal-box .modal-btn{ padding:10px 16px; border-radius:10px; border:none; font-weight:700; cursor:pointer; font-size:14px; }
+    .modal-btn-confirm{ background:#2563eb; color:#fff; }
+    .modal-btn-confirm:hover{ opacity:.92; }
+    .modal-btn-cancel{ background:#e2e8f0; color:#0f172a; }
+    .modal-btn-cancel:hover{ background:#cbd5e1; }
 </style>
 
 <div class="tabs">
@@ -176,6 +193,26 @@
     </a>
 </div>
 
+<div id="no-results" class="no-results" style="display:none;">No results found.</div>
+
+{{-- Search bar: search by Ref No. (#123) or client name --}}
+<div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+    <form method="GET" action="{{ route('requests.index') }}" style="display:flex; gap:8px; width:100%;">
+        <input type="hidden" name="tab" value="{{ $activeTab }}">
+        <input
+            type="text"
+            name="q"
+            placeholder="Search by Ref No. or client name"
+            value="{{ request('q') }}"
+            style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0; flex:1;"
+        >
+        <button type="submit" class="btn">Search</button>
+        <a href="{{ route('requests.index', ['tab' => $activeTab]) }}" class="btn-ghost" style="display:inline-flex; align-items:center;">Clear</a>
+        <span id="search-spinner" style="display:none; margin-left:6px;"></span>
+    </form>
+</div>
+
+<div id="requests-list">
 @forelse($shown as $req)
     @php $rid = 'req-'.$req->id; @endphp
 
@@ -275,23 +312,25 @@
 
                 @if($req->status !== 'ready_to_receive')
                     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
-                        {{-- Save Decision --}}
-                        <button class="btn" type="submit">Save Decision</button>
+                        {{-- Save Decision - only show if NOT approved --}}
+                        @if($req->status !== 'approved')
+                            <button class="btn-ghost" type="button" onclick="confirmAction(event, null, 'Save Decision', 'Save the approval quantities for this request?', '{{ $req->id }}')">
+                                Save Decision
+                            </button>
+                        @endif
 
-                        {{-- Reject Whole --}}
-                        <button class="btn-ghost" type="submit" name="status" value="rejected">
-                            Reject Whole Request
-                        </button>
+                        {{-- Only show other buttons if NOT pending --}}
+                        @if($req->status !== 'pending')
+                            {{-- Reject Whole --}}
+                            <button class="btn-ghost" type="button" onclick="confirmAction(event, 'rejected', 'Reject Entire Request', 'This request will be rejected. This action cannot be undone.', '{{ $req->id }}')">
+                                Reject Whole Request
+                            </button>
 
-                        {{-- Mark Approved --}}
-                        <button class="btn-ghost" type="submit" name="status" value="approved">
-                            Mark as Approved
-                        </button>
-
-                        {{-- Ready to Receive --}}
-                        <button class="btn-ghost" type="submit" name="status" value="ready_to_receive">
-                            Ready to Receive (Generate Code)
-                        </button>
+                            {{-- Ready to Receive --}}
+                            <button class="btn-ghost" type="button" onclick="confirmAction(event, 'ready_to_receive', 'Generate Code', 'Proceed to generate a verification code for the client to claim these items.', '{{ $req->id }}')">
+                                Ready to Receive
+                            </button>
+                        @endif
                     </div>
                 @endif
             </form>
@@ -320,8 +359,23 @@
 @empty
     <div class="muted">No requests found.</div>
 @endforelse
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal">
+    <div class="modal-box">
+        <h3 id="modal-title">Confirm</h3>
+        <p id="modal-message">Are you sure?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+            <button class="modal-btn modal-btn-confirm" onclick="submitConfirmAction()">Confirm</button>
+        </div>
+    </div>
+</div>
 
 <script>
+let pendingAction = null;
+
 function toggleReq(id){
     const el = document.getElementById(id);
     if(!el) return;
@@ -335,5 +389,91 @@ function setMax(btn, maxValue){
         input.value = maxValue;
     }
 }
+
+function confirmAction(e, status, title, message, requestId){
+    e.preventDefault();
+    const modal = document.getElementById('confirmModal');
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-message').textContent = message;
+    pendingAction = { status, form: e.target.closest('form') };
+    if(modal) modal.classList.add('show');
+}
+
+function closeConfirmModal(){
+    const modal = document.getElementById('confirmModal');
+    if(modal) modal.classList.remove('show');
+    pendingAction = null;
+}
+
+function submitConfirmAction(){
+    if(pendingAction && pendingAction.form){
+        // Only add status field if status is not null (Save Decision has null status)
+        if(pendingAction.status !== null){
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'status';
+            input.value = pendingAction.status;
+            pendingAction.form.appendChild(input);
+        }
+        pendingAction.form.submit();
+    }
+    closeConfirmModal();
+}
+
+// Close modal on Escape key or background click
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeConfirmModal();
+});
+document.getElementById('confirmModal')?.addEventListener('click', function(e){
+    if(e.target === this) closeConfirmModal();
+});
+
+// Live search (AJAX)
+(function(){
+    const searchForm = document.querySelector('form[action="{{ route('requests.index') }}"]');
+    if(!searchForm) return;
+    const searchInput = searchForm.querySelector('input[name="q"]');
+    const requestsList = document.getElementById('requests-list');
+    const url = '{{ route('requests.index') }}';
+    let timer = null;
+
+    function fetchResults(q){
+        const params = new URLSearchParams();
+        params.append('q', q || '');
+        params.append('tab', '{{ $activeTab }}');
+
+        const spinner = document.getElementById('search-spinner');
+        const noResults = document.getElementById('no-results');
+        if(spinner) spinner.style.display = 'inline-block';
+        if(noResults) noResults.style.display = 'none';
+
+        fetch(url + '?' + params.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                if(spinner) spinner.style.display = 'none';
+                if(data.html !== undefined){
+                    requestsList.innerHTML = data.html;
+                }
+                if(typeof data.count !== 'undefined'){
+                    if(data.count === 0){
+                        if(noResults) noResults.style.display = 'block';
+                    } else {
+                        if(noResults) noResults.style.display = 'none';
+                    }
+                }
+            }).catch(()=>{ if(spinner) spinner.style.display = 'none'; });
+    }
+
+    searchInput.addEventListener('input', function(e){
+        clearTimeout(timer);
+        timer = setTimeout(()=> fetchResults(this.value.trim()), 350);
+    });
+
+    searchForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        clearTimeout(timer);
+        fetchResults(searchInput.value.trim());
+    });
+})();
 </script>
 @endsection

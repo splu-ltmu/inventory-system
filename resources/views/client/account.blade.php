@@ -173,7 +173,29 @@
         color: var(--text);
         font-weight: 700;
     }
+    
+    /* Confirmation modal */
+    #confirmModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:5000; align-items:center; justify-content:center; }
+    #confirmModal.show{ display:flex; }
+    .confirm-box{ background:#fff; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.25); max-width:420px; width:90%; padding:24px; }
+    .confirm-box h3{ margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800; }
+    .confirm-box p{ margin:0 0 20px 0; color:#475569; font-size:14px; line-height:1.5; }
+    .confirm-buttons{ display:flex; gap:10px; justify-content:flex-end; }
+    .confirm-btn-cancel{ padding:10px 16px; border-radius:10px; border:none; background:#e2e8f0; color:#0f172a; font-weight:700; cursor:pointer; font-size:14px; }
+    .confirm-btn-confirm{ padding:10px 16px; border-radius:10px; border:none; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; font-size:14px; }
 </style>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal">
+    <div class="confirm-box">
+        <h3 id="modal-title">Confirm</h3>
+        <p id="modal-text">Are you sure?</p>
+        <div class="confirm-buttons">
+            <button type="button" class="confirm-btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+            <button type="button" class="confirm-btn-confirm" onclick="submitConfirmedForm()">Confirm</button>
+        </div>
+    </div>
+</div>
 
 <div class="account-container">
     <!-- Email Update Card -->
@@ -202,8 +224,7 @@
                     @enderror
                 </div>
 
-                <button type="submit" class="btn-submit">Update Email</button>
-            </form>
+                <button type="button" class="btn-submit" onclick="showConfirmModal(this.form, 'Update Email Address', 'Update your email address? You may need to verify the new email.')">Update Email</button>\n            </form>
         </div>
     </div>
 
@@ -241,8 +262,7 @@
                     <input type="password" id="new_password_confirmation" name="new_password_confirmation" placeholder="Confirm new password" required>
                 </div>
 
-                <button type="submit" class="btn-submit">Change Password</button>
-            </form>
+                <button type="button" class="btn-submit" onclick="showConfirmModal(this.form, 'Change Password', 'Change your password? Make sure to remember the new password.')">Change Password</button>\n            </form>
         </div>
     </div>
 
@@ -273,11 +293,37 @@
 </div>
 
 <script>
+let pendingForm = null;
+
 function toggleCard(id){
     const el = document.getElementById(id);
     if(!el) return;
     el.classList.toggle('open');
 }
+
+function showConfirmModal(form, title, message){
+    pendingForm = form;
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-text').textContent = message;
+    document.getElementById('confirmModal').classList.add('show');
+}
+
+function closeConfirmModal(){
+    document.getElementById('confirmModal').classList.remove('show');
+    pendingForm = null;
+}
+
+function submitConfirmedForm(){
+    if(pendingForm){
+        pendingForm.submit();
+    }
+    closeConfirmModal();
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeConfirmModal();
+});
 </script>
 
 @endsection

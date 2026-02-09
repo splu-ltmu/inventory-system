@@ -21,7 +21,8 @@ return new class extends Migration {
                 'approved',          // has at least 1 approved item
                 'rejected',          // all items rejected
                 'ready_to_receive',  // code generated
-                'released'           // moved to outbound
+                'released',          // moved to outbound
+                'cancelled'          // cancelled by client
             ])->default('pending');
 
             $table->string('verification_code')->nullable();

@@ -41,9 +41,7 @@ class AdminDashboardController extends Controller
         return view('admin.dashboard', compact('pendingRequests', 'pendingPasswordResets', 'categoryAnalytics'));
     }
 
-    /**
-     * Show a simple notifications overview for admins.
-     */
+    
     public function notifications()
     {
         $pendingRequests = StockRequest::where('status', 'pending')->get();
@@ -55,9 +53,7 @@ class AdminDashboardController extends Controller
         return view('admin.notifications', compact('pendingRequests','pendingPasswordResets','lowStock','outStock'));
     }
 
-    /**
-     * Return notification counts as JSON for AJAX polling.
-     */
+
     public function counts()
     {
         $pendingRequests = \App\Models\StockRequest::where('status', 'pending')->count();

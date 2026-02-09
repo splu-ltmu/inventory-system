@@ -168,6 +168,9 @@ Route::prefix('client')
 
         // ✅ View requests
         Route::get('/requests', [ClientRequestController::class, 'index'])->name('client.requests');
+        
+        // ✅ Cancel pending request
+        Route::post('/requests/{id}/cancel', [ClientRequestController::class, 'cancel'])->name('client.requests.cancel');
 
         // ✅ Account settings
         Route::get('/account', [AccountController::class, 'index'])->name('client.account');

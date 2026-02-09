@@ -60,4 +60,28 @@ class ClientRequestController extends Controller
         return redirect()->route('client.requests')
             ->with('success', 'Request submitted. Wait for admin approval.');
     }
+
+    public function cancel($id)
+    {
+        $request = StockRequest::find($id);
+
+        if (!$request) {
+            return response()->json(['error' => 'Request not found.'], 404);
+        }
+
+        // Authorization: must be the client who created the request
+        if ($request->client_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized action.'], 403);
+        }
+
+        // Can only cancel pending requests
+        if ($request->status !== 'pending') {
+            return response()->json(['error' => 'Only pending requests can be cancelled.'], 422);
+        }
+
+        // Update status to cancelled
+        $request->update(['status' => 'cancelled']);
+
+        return response()->json(['success' => 'Request cancelled successfully.'], 200);
+    }
 }

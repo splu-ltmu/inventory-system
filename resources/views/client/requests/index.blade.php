@@ -102,6 +102,8 @@
                         <span class="pill approved">APPROVED</span>
                     @elseif($status === 'ready_to_receive')
                         <span class="pill approved">READY TO RECEIVE</span>
+                    @elseif($status === 'cancelled')
+                        <span class="pill rejected">CANCELLED</span>
                     @elseif($status === 'rejected')
                         <span class="pill rejected">REJECTED</span>
                     @else
@@ -179,6 +181,14 @@
                     @endforelse
                 </table>
             </div>
+            
+            @if($status === 'pending')
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:12px;">
+                    <button type="button" class="btn-ghost" onclick="showCancelConfirm({{ $req->id }})" style="padding:9px 12px; border-radius:10px; border:1px solid #e2e8f0; background:#fff; color:#0f172a; cursor:pointer; font-weight:700;">
+                        Cancel Request
+                    </button>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -186,11 +196,76 @@
     <div class="muted">No requests found.</div>
 @endforelse
 
+<!-- Cancel Confirmation Modal -->
+<div id="cancelConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:5000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.25); max-width:420px; width:90%; padding:24px;">
+        <h3 style="margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800;">Cancel Request</h3>
+        <p style="margin:0 0 20px 0; color:#475569; font-size:14px; line-height:1.5;">Cancel this pending request? This action cannot be undone.</p>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" onclick="closeCancelConfirm()" style="padding:10px 16px; border-radius:10px; border:none; background:#e2e8f0; color:#0f172a; font-weight:700; cursor:pointer; font-size:14px;">Keep Request</button>
+            <button type="button" onclick="submitCancelRequest()" style="padding:10px 16px; border-radius:10px; border:none; background:#dc2626; color:#fff; font-weight:700; cursor:pointer; font-size:14px;">Cancel Request</button>
+        </div>
+    </div>
+</div>
+
 <script>
+let pendingCancelRequestId = null;
+
 function toggleReq(id){
     const el = document.getElementById(id);
     if(!el) return;
     el.classList.toggle('open');
 }
+
+function showCancelConfirm(requestId){
+    pendingCancelRequestId = requestId;
+    document.getElementById('cancelConfirmModal').style.display = 'flex';
+}
+
+function closeCancelConfirm(){
+    document.getElementById('cancelConfirmModal').style.display = 'none';
+    pendingCancelRequestId = null;
+}
+
+function submitCancelRequest(){
+    if(!pendingCancelRequestId) return;
+    
+    // Use fetch POST instead of form submission for more reliable handling
+    const token = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+    const url = `{{ url('/client/requests') }}/${pendingCancelRequestId}/cancel`;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (response.ok) {
+            // If successful, reload the page to see the update
+            window.location.reload();
+        } else {
+            return response.json().then(data => {
+                console.log('Error response:', data);
+                alert(data.error || 'Failed to cancel request. Please try again.');
+                closeCancelConfirm();
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while cancelling the request.');
+        closeCancelConfirm();
+    });
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeCancelConfirm();
+});
 </script>
 @endsection

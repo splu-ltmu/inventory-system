@@ -13,13 +13,52 @@ use Illuminate\Support\Str;
 
 class RequestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $requests = StockRequest::with(['client', 'items.stock'])
-            ->latest()
-            ->get();
+        $q = trim((string)$request->query('q', ''));
 
-        return view('admin.requests.index', compact('requests'));
+        $requestsQuery = StockRequest::with(['client', 'items.stock']);
+
+        if ($q !== '') {
+            // allow searching by ref no (id) or client name
+            $clean = ltrim($q, '#');
+
+            $requestsQuery->where(function ($qr) use ($clean) {
+                if (is_numeric($clean)) {
+                    $qr->where('id', (int)$clean);
+                }
+
+                $qr->orWhereHas('client', function ($qc) use ($clean) {
+                    $qc->where('name', 'like', "%{$clean}%");
+                });
+            });
+        }
+
+        $requests = $requestsQuery->latest()->get();
+
+        // Prepare tabbed grouping like the blade previously did
+        $activeTab = request('tab', 'pending');
+
+        $pending   = $requests->where('status', 'pending');
+        $approved  = $requests->where('status', 'approved');
+        $ready     = $requests->where('status', 'ready_to_receive');
+        $rejected  = $requests->where('status', 'rejected');
+
+        $shown = match ($activeTab) {
+            'approved' => $approved,
+            'ready_to_receive' => $ready,
+            'rejected' => $rejected,
+            default => $pending,
+        };
+
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('admin.requests._list', compact('shown','activeTab'))->render(),
+                'count' => $shown->count(),
+            ]);
+        }
+
+        return view('admin.requests.index', compact('requests', 'pending', 'approved', 'ready', 'rejected', 'shown', 'activeTab'));
     }
 
     /**

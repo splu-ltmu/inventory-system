@@ -192,6 +192,18 @@
     </table>
 </div>
 
+{{-- CONFIRMATION MODAL --}}
+<div id="confirmModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:10000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.25); max-width:420px; width:90%; padding:24px;">
+        <h3 id="confirmTitle" style="margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800;">Confirm</h3>
+        <p id="confirmMessage" style="margin:0 0 20px 0; color:#475569; font-size:14px; line-height:1.5;">Are you sure?</p>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" onclick="closeConfirmModal()" style="padding:10px 16px; border-radius:10px; border:none; background:#e2e8f0; color:#0f172a; font-weight:700; cursor:pointer; font-size:14px;">Cancel</button>
+            <button type="button" onclick="confirmAction()" style="padding:10px 16px; border-radius:10px; border:none; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; font-size:14px;">Confirm</button>
+        </div>
+    </div>
+</div>
+
 {{-- MODAL --}}
 <div class="modal" id="reqModal">
     <div class="modal-card">
@@ -243,7 +255,7 @@
                         <div id="cartRows"></div>
 
                         <div style="display:flex; gap:10px; margin-top:12px;">
-                            <button type="submit" class="btn" style="flex:1;">Submit Request</button>
+                            <button type="button" class="btn" style="flex:1;" onclick="confirmSubmitRequest()">Submit Request</button>
                             <button type="button" class="btn-ghost" onclick="clearCart()">Clear</button>
                         </div>
 
@@ -398,5 +410,73 @@ function escapeHtml(str){
         '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
     }[m]));
 }
-</script>
+
+let confirmCallback = null;
+
+function confirmSubmitRequest(){
+    const keys = Object.keys(cart);
+    if(keys.length === 0){
+        alert('Please add at least one item.');
+        return;
+    }
+    confirmCallback = 'submitRequestConfirmed';
+    showConfirmModal('Submit Request', 'Submit this request for approval? You can view and manage it in My Requests.');
+}
+
+function submitRequestConfirmed(){
+    const form = document.querySelector('#reqModal form');
+    if(form) form.submit();
+}
+
+function showConfirmModal(title, message){
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmModalOverlay').style.display = 'flex';
+}
+
+function closeConfirmModal(){
+    document.getElementById('confirmModalOverlay').style.display = 'none';
+    confirmCallback = null;
+}
+
+function confirmAction(){
+    if(confirmCallback === 'submitRequestConfirmed'){
+        submitRequestConfirmed();
+    }
+    closeConfirmModal();
+}
+let pendingSubmitForm = null;
+
+function confirmSubmitRequest(){
+    const keys = Object.keys(cart);
+    if(keys.length === 0){
+        alert('Please add at least one item.');
+        return;
+    }
+    showConfirmModal('Submit Request', 'Submit this request for approval? You can view and manage it in My Requests.', 'submitRequestConfirmed');
+}
+
+function submitRequestConfirmed(){
+    const form = document.querySelector('#reqModal form');
+    if(form) form.submit();
+    closeConfirmModal();
+}
+
+function showConfirmModal(title, message, actionCallback){
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    window.confirmCallback = actionCallback;
+    document.getElementById('confirmModalOverlay').style.display = 'flex';
+}
+
+function closeConfirmModal(){
+    document.getElementById('confirmModalOverlay').style.display = 'none';
+    window.confirmCallback = null;
+}
+
+function confirmAction(){
+    if(window.confirmCallback && typeof window[window.confirmCallback] === 'function'){
+        window[window.confirmCallback]();
+    }
+}</script>
 @endsection
