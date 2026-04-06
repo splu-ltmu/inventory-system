@@ -7,37 +7,7 @@
 @endphp
 
 @section('sidebar')
-    <a href="{{ route('admin.dashboard') }}" class="{{ request()->is('admin') ? 'active' : '' }}">
-        Dashboard <small>Home</small>
-    </a>
-
-    <a href="/admin/categories" class="{{ request()->is('admin/categories*') ? 'active' : '' }}">
-        Categories <small>Manage</small>
-    </a>
-
-    <a href="/admin/stocks" class="{{ request()->is('admin/stocks*') ? 'active' : '' }}">
-        Stocks <small>Manage</small>
-    </a>
-
-    <a href="/admin/inbound" class="{{ request()->is('admin/inbound*') ? 'active' : '' }}">
-        Inbound <small>Records</small>
-    </a>
-
-    <a href="/admin/outbound" class="{{ request()->is('admin/outbound*') ? 'active' : '' }}">
-        Outbound <small>Records</small>
-    </a>
-
-    <a href="/admin/requests" class="{{ request()->is('admin/requests*') ? 'active' : '' }}">
-        Requests <small>Approve/Reject</small>
-    </a>
-
-    <a href="/admin/password-reset" class="{{ request()->is('admin/password-reset*') ? 'active' : '' }}">
-        Password Reset <small>Requests</small>
-    </a>
-
-    <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') ? 'active' : '' }}">
-        Client Accounts <small>Create/Manage</small>
-    </a>
+    @include('partials.admin-sidebar')
 @endsection
 
 @section('content')

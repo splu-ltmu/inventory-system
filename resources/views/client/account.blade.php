@@ -11,6 +11,10 @@
         Dashboard <small>Home</small>
     </a>
 
+    <a href="{{ route('client.summary') }}" class="{{ request()->is('client/summary*') ? 'active' : '' }}">
+        Summary <small>Transactions</small>
+    </a>
+
     <a href="{{ route('client.stocks') }}" class="{{ request()->is('client/stocks*') ? 'active' : '' }}">
         Available Stocks <small>Request items</small>
     </a>
@@ -26,29 +30,38 @@
 
 @section('content')
 <style>
-    .account-container{ max-width:700px; }
+    .account-container{
+        max-width: 840px;
+        margin: 24px auto;
+        padding: 0 16px;
+    }
     
     .settings-card{
-        background: white;
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 14px;
-        margin-bottom: 14px;
-        box-shadow: 0 1px 2px rgba(15,23,42,.06);
+        border-radius: 18px;
+        margin-bottom: 18px;
+        box-shadow: 0 10px 25px rgba(15,23,42,.08);
+        overflow: hidden;
+        transition: transform .2s, box-shadow .2s;
+    }
+    .settings-card:hover{
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(15,23,42,.12);
     }
     
     .card-header{
-        padding: 14px 16px;
+        padding: 16px 18px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         cursor: pointer;
-        background: var(--blue-soft);
+        background: rgba(37,99,235,.08);
         border-bottom: 1px solid var(--line);
-        border-radius: 14px 14px 0 0;
     }
     
     .card-header:hover{
-        background: rgba(37,99,235,.12);
+        background: rgba(37,99,235,.16);
     }
     
     .card-header h3{
@@ -59,9 +72,36 @@
     }
     
     .card-toggle{
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         color: var(--muted);
         font-size: 12px;
         font-weight: 600;
+        letter-spacing: .2px;
+    }
+    .card-toggle::after{
+        content: '▾';
+        display: inline-block;
+        transition: transform .2s ease;
+    }
+    .card-header.open .card-toggle::after{
+        transform: rotate(-180deg);
+    }
+    
+    .card-body{
+        display: none;
+        padding: 18px;
+        background: rgba(255,255,255,.8);
+        border-radius: 0 0 18px 18px;
+        animation: fadeIn 180ms ease-out;
+    }
+    
+    .card-body.open{ display: block; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .card-body{
@@ -116,10 +156,15 @@
         font-weight: 700;
         font-size: 14px;
         cursor: pointer;
-        transition: background .2s;
+        transition: all 0.3s ease;
     }
     .btn-submit:hover{
         background: rgba(37,99,235,.9);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+    }
+    .btn-submit:active{
+        transform: translateY(0);
     }
 
     .alert{
@@ -181,8 +226,12 @@
     .confirm-box h3{ margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800; }
     .confirm-box p{ margin:0 0 20px 0; color:#475569; font-size:14px; line-height:1.5; }
     .confirm-buttons{ display:flex; gap:10px; justify-content:flex-end; }
-    .confirm-btn-cancel{ padding:10px 16px; border-radius:10px; border:none; background:#e2e8f0; color:#0f172a; font-weight:700; cursor:pointer; font-size:14px; }
-    .confirm-btn-confirm{ padding:10px 16px; border-radius:10px; border:none; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; font-size:14px; }
+    .confirm-btn-cancel{ padding:10px 16px; border-radius:10px; border:none; background:#e2e8f0; color:#0f172a; font-weight:700; cursor:pointer; font-size:14px; transition: all 0.3s ease; }
+    .confirm-btn-cancel:hover{ background:#cbd5e1; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,.1); }
+    .confirm-btn-cancel:active{ transform: translateY(0); }
+    .confirm-btn-confirm{ padding:10px 16px; border-radius:10px; border:none; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; font-size:14px; transition: all 0.3s ease; }
+    .confirm-btn-confirm:hover{ background:rgba(37,99,235,.9); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(37,99,235,.2); }
+    .confirm-btn-confirm:active{ transform: translateY(0); }
 </style>
 
 <!-- Confirmation Modal -->
@@ -224,7 +273,7 @@
                     @enderror
                 </div>
 
-                <button type="button" class="btn-submit" onclick="showConfirmModal(this.form, 'Update Email Address', 'Update your email address? You may need to verify the new email.')">Update Email</button>\n            </form>
+                <button type="button" class="btn-submit" onclick="showConfirmModal(this.form, 'Update Email Address', 'Update your email address? You may need to verify the new email.')">Update Email</button>           </form>
         </div>
     </div>
 
@@ -262,7 +311,7 @@
                     <input type="password" id="new_password_confirmation" name="new_password_confirmation" placeholder="Confirm new password" required>
                 </div>
 
-                <button type="button" class="btn-submit" onclick="showConfirmModal(this.form, 'Change Password', 'Change your password? Make sure to remember the new password.')">Change Password</button>\n            </form>
+                <button type="button" class="btn-submit" onclick="showConfirmModal(this.form, 'Change Password', 'Change your password? Make sure to remember the new password.')">Change Password</button>           </form>
         </div>
     </div>
 
@@ -296,9 +345,15 @@
 let pendingForm = null;
 
 function toggleCard(id){
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.classList.toggle('open');
+    const body = document.getElementById(id);
+    if(!body) return;
+
+    const header = body.previousElementSibling;
+    const isOpen = body.classList.toggle('open');
+
+    if(header && header.classList) {
+        header.classList.toggle('open', isOpen);
+    }
 }
 
 function showConfirmModal(form, title, message){

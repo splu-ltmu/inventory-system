@@ -12,7 +12,8 @@ class UserManagementController extends Controller
 {
     public function index()
     {
-        $users = User::where('role', 'client')->orderBy('created_at', 'desc')->get();
+        // show all users (clients and admins) in the admin users list
+        $users = User::orderBy('created_at', 'desc')->get();
         return view('admin.users.index', compact('users'));
     }
 
@@ -29,6 +30,7 @@ class UserManagementController extends Controller
             'password' => 'required|min:6|confirmed',
             'password_confirmation' => 'required',
             'role' => 'required|in:admin,client',
+            'office' => 'nullable|string|max:255',
         ]);
 
         User::create([
@@ -36,6 +38,7 @@ class UserManagementController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
+            'office' => $validated['office'] ?? null,
         ]);
 
         return redirect()->route('admin.users.index')->with('success', 'New account created successfully.');
@@ -58,6 +61,8 @@ class UserManagementController extends Controller
                 'email',
                 Rule::unique('users')->ignore($user->id),
             ],
+            'role' => 'required|in:admin,client',
+            'office' => 'nullable|string|max:255',
         ]);
 
         $user->update($validated);

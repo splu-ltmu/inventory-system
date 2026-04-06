@@ -21,38 +21,7 @@
 @endphp
 
 @section('sidebar')
-    <a href="{{ route('admin.dashboard') }}" class="{{ request()->is('admin') ? 'active' : '' }}">
-        Dashboard <small>Home</small>
-    </a>
-
-    <a href="{{ route('categories.index') }}" class="{{ request()->is('admin/categories*') ? 'active' : '' }}">
-        Categories <small>Manage</small>
-    </a>
-
-    <a href="{{ route('stocks.index') }}" class="{{ request()->is('admin/stocks*') ? 'active' : '' }}">
-        Stocks <small>Manage</small>
-    </a>
-
-    <a href="{{ route('inbound.index') }}" class="{{ request()->is('admin/inbound*') ? 'active' : '' }}">
-        Inbound <small>Records</small>
-    </a>
-
-    <a href="{{ route('outbound.index') }}" class="{{ request()->is('admin/outbound*') ? 'active' : '' }}">
-        Outbound <small>Released Items</small>
-    </a>
-
-    {{-- ✅ This exists in route:list: requests.index --}}
-    <a href="{{ route('requests.index') }}" class="{{ request()->is('admin/requests*') ? 'active' : '' }}">
-        Requests <small>Workflow</small>
-    </a>
-
-    <a href="/admin/password-reset" class="{{ request()->is('admin/password-reset*') ? 'active' : '' }}">
-        Password Reset <small>Requests</small>
-    </a>
-
-    <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') ? 'active' : '' }}">
-        Client Accounts <small>Create/Manage</small>
-    </a>
+    @include('partials.admin-sidebar')
 @endsection
 
 @section('content')
@@ -63,33 +32,106 @@
         padding:10px 12px; border-radius:12px; text-decoration:none;
         background:#ffffff; border:1px solid #e2e8f0; color:#0f172a;
         font-weight:600; box-shadow:0 1px 2px rgba(15,23,42,.06);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .tab:hover{ border-color:#93c5fd; background:#eff6ff; color:#2563eb; }
-    .tab.active{ border-color:#2563eb; background:#eff6ff; color:#2563eb; }
+    .tab:hover{ 
+        border-color:var(--blue); 
+        background:var(--blue-soft); 
+        color:var(--blue);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(37,99,235,.15);
+    }
+
+    /* Active tab variants to match Blue + Orange palette */
+    .tab.active{ border-color:var(--blue); background:linear-gradient(90deg,var(--blue-soft),#f0f9ff); color:var(--blue); }
+    .tab.pending.active{ border-color:var(--orange); background:linear-gradient(90deg,var(--orange-soft),#fff7ed); color:var(--orange); box-shadow: inset 0 -2px rgba(249,115,22,0.06); }
+    .tab.approved.active{ border-color:var(--blue); background:linear-gradient(90deg,#eff6ff,#ecfeff); color:var(--blue); }
+    .tab.ready.active{ border-color:var(--blue); background:linear-gradient(90deg,#e6f0ff,#f0f9ff); color:var(--blue); }
+    .tab.rejected.active{ border-color: #fca5a5; background:linear-gradient(90deg,#fff5f5,#fff1f2); color:#dc2626; }
 
     .badge{
         padding:2px 8px; border-radius:999px; font-size:12px;
         border:1px solid #e2e8f0; background:#f8fafc; color:#475569;
     }
 
+    /* Request card / header / expanded state */
     .req-card{
         border:1px solid #e2e8f0;
         border-radius:14px;
-        background:#fff;
-        overflow:hidden;
+        background:linear-gradient(180deg,#ffffff,#fffdfa);
+        overflow:visible;
         margin-bottom:14px;
-        box-shadow:0 1px 2px rgba(15,23,42,.06);
+        box-shadow:0 6px 18px rgba(2,6,23,0.04);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+        position:relative;
     }
+
+    /* Hover & focus: lift card slightly and intensify accent */
+    .req-card:hover, .req-card:focus-within{
+        transform: translateY(-6px);
+        box-shadow:0 30px 60px rgba(2,6,23,0.12);
+        border-color: rgba(37,99,235,0.12);
+    }
+
+    /* status-specific subtle left accent when expanded */
+    .req-card.status-pending.expanded{ box-shadow:0 18px 40px rgba(249,115,22,0.06); border-left:4px solid rgba(249,115,22,0.9); }
+    .req-card.status-approved.expanded{ box-shadow:0 18px 40px rgba(37,99,235,0.06); border-left:4px solid rgba(37,99,235,0.9); }
+    .req-card.status-ready_to_receive.expanded{ box-shadow:0 18px 40px rgba(37,99,235,0.06); border-left:4px solid rgba(37,99,235,0.9); }
+    .req-card.status-rejected.expanded{ box-shadow:0 18px 40px rgba(220,38,38,0.12); border-left:4px solid rgba(220,38,38,0.95); }
+
+    /* stronger rejected details styling */
+    .req-card.status-rejected .req-header{ background: linear-gradient(90deg, rgba(254,226,226,0.45), rgba(254,202,202,0.15)); }
+    .req-card.status-rejected .req-title{ color:#991b1b; }
+    .req-card.status-rejected .req-sub{ color:#7f1d1d; }
+    .req-card.status-rejected .req-body{
+        background: rgba(254,202,202,0.12);
+        border-top:1px solid rgba(220,38,38,0.25);
+        border-bottom:2px solid rgba(220,38,38,0.30);
+        border-radius: 0 0 14px 14px;
+    }
+    .req-card.status-rejected .req-body table th, .req-card.status-rejected .req-body table td{
+        border-color: rgba(220,38,38,0.2);
+    }
+    .req-card.status-rejected .status-pill{ background:linear-gradient(180deg,#fee2e2,#fecaca); color:#991b1b; border-color:#fda4af; }
+
+    /* Hover accent per status */
+    .req-card.status-pending:hover{ border-color: rgba(249,115,22,0.25); box-shadow:0 30px 60px rgba(249,115,22,0.06); }
+    .req-card.status-approved:hover, .req-card.status-ready_to_receive:hover{ border-color: rgba(37,99,235,0.18); box-shadow:0 30px 60px rgba(37,99,235,0.06); }
+    .req-card.status-rejected:hover{ border-color: rgba(220,38,38,0.18); box-shadow:0 30px 60px rgba(220,38,38,0.06); }
+
     .req-header{
-        padding:14px 16px;
+        padding:14px 20px; /* extra right padding to accommodate absolute ref */
         display:flex;
         align-items:center;
-        justify-content:space-between;
+        justify-content:flex-start; /* keep left content natural; right content will be absolute */
         gap:12px;
         cursor:pointer;
-        background:#fff7ed;
-        border-bottom:1px solid #e2e8f0;
+        /* show a subtle blue gradient by default */
+        background: linear-gradient(90deg, rgba(37,99,235,0.05), rgba(37,99,235,0.02));
+        border-bottom:1px solid #eef2ff;
+        transition: background-color 0.3s ease, border-bottom-color 0.3s ease;
+        position:relative; /* needed for absolute-positioned .req-right and chevron */
     }
+
+    /* header hover tint for clearer affordance */
+    .req-card:hover .req-header{ background: linear-gradient(90deg, rgba(37,99,235,0.02), rgba(249,115,22,0.01)); }
+    .req-card.status-pending:hover .req-header{ background: linear-gradient(90deg, rgba(249,115,22,0.03), rgba(249,115,22,0.01)); }
+    .req-card.status-approved:hover .req-header{ background: linear-gradient(90deg, rgba(37,99,235,0.03), rgba(37,99,235,0.01)); }
+
+    .req-header::after{
+        content: '\25BE'; /* small chevron */
+        position:absolute;
+        right:14px;
+        top:50%;
+        transform:translateY(-50%) rotate(0deg);
+        transition:transform .2s ease, color .18s ease;
+        color:rgba(2,6,23,0.36);
+        font-size:12px;
+    }
+
+    /* rotate chevron when card is expanded */
+    .req-card.expanded .req-header::after{ transform:translateY(-50%) rotate(180deg); color:rgba(2,6,23,0.6); }
+
     .req-title{
         font-weight:800;
         font-size:18px;
@@ -101,33 +143,71 @@
         font-size:13px;
     }
     .req-right{
+        position:absolute; /* move to the far right */
+        right:56px; /* leave space for the chevron */
+        top:50%;
+        transform:translateY(-50%);
         text-align:right;
         color:#334155;
         font-weight:700;
         white-space:nowrap;
     }
-    .req-body{
-        display:none;
-        padding:14px 16px 16px;
-        background:#fff;
+
+    /* responsive fallback: keep .req-right in normal flow on small screens */
+    @media (max-width:640px){
+        .req-header{ padding-right:16px; }
+        .req-header::after{ position:static; transform:none; margin-left:12px; top:auto; right:auto; }
+        .req-right{ position:static; transform:none; margin-left:auto; }
     }
-    .req-body.open{ display:block; }
+
+    /* animated collapse/expand using max-height + opacity */
+    .req-body{
+        max-height:0;
+        overflow:hidden;
+        padding:0 16px;
+        background:linear-gradient(180deg, #fafbfc 0%, rgba(99,102,241,.02) 100%);
+        transition: max-height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, padding 0.3s ease, border 0.3s ease;
+        opacity:0;
+        border-top: 2px solid rgba(37,99,235,.08);
+    }
+    .req-body.open{
+        max-height:1200px; /* large enough to show content */
+        padding:14px 16px 16px;
+        opacity:1;
+        border-top: 2px solid rgba(37,99,235,.15);
+    }
 
     table{ width:100%; border-collapse:collapse; }
-    th, td{ border:1px solid #e2e8f0; padding:10px; text-align:center; }
-    th{ background:#f8fafc; color:#0f172a; }
+    th, td{ 
+        border:1px solid #e2e8f0; 
+        padding:10px; 
+        text-align:center;
+        transition: background-color 0.2s ease;
+    }
+    th{ 
+        background:linear-gradient(135deg, #f8fafc, #f1f5f9);
+        color:#0f172a;
+        font-weight:700;
+    }
+    tbody tr:hover td{
+        background-color: rgba(37,99,235,.03);
+    }
 
     .muted{ color:#64748b; }
     .status-pill{
         display:inline-block;
         padding:4px 10px;
         border-radius:999px;
-        border:1px solid #e2e8f0;
-        background:#f8fafc;
+        border:1px solid rgba(2,6,23,0.06);
+        background:transparent;
         font-size:12px;
         font-weight:700;
         color:#334155;
     }
+    .status-pill.status-pending{ background:linear-gradient(180deg,var(--orange-soft),#fff7ed); color:var(--orange); border-color:rgba(249,115,22,0.16); }
+    .status-pill.status-approved{ background:linear-gradient(180deg,#eff6ff,#eef6ff); color:var(--blue); border-color:rgba(37,99,235,0.12); }
+    .status-pill.status-ready_to_receive{ background:linear-gradient(180deg,#eef2ff,#f8fbff); color:var(--blue); border-color:rgba(37,99,235,0.10); }
+    .status-pill.status-rejected{ background:linear-gradient(180deg,#fff1f2,#fff5f5); color:#b91c1c; border-color:rgba(244,63,94,0.12); }
     .btn{
         padding:9px 12px;
         border-radius:10px;
@@ -136,8 +216,16 @@
         color:#fff;
         cursor:pointer;
         font-weight:700;
+        transition: all 0.3s ease;
     }
-    .btn:hover{ opacity:.92; }
+    .btn:hover{ 
+        opacity:.92;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+    }
+    .btn:active{
+        transform: translateY(0);
+    }
     .btn-ghost{
         padding:9px 12px;
         border-radius:10px;
@@ -146,9 +234,18 @@
         color:#0f172a;
         cursor:pointer;
         font-weight:700;
-        transition: background-color .2s, border-color .2s, color .2s;
+        transition: all 0.3s ease;
     }
-    .btn-ghost:hover{ background:#eff6ff; border-color:#2563eb; color:#2563eb; }
+    .btn-ghost:hover{ 
+        background:#eff6ff; 
+        border-color:#2563eb; 
+        color:#2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.15);
+    }
+    .btn-ghost:active{
+        transform: translateY(0);
+    }
 
     input[type="number"], input[type="text"], select{
         padding:8px 10px;
@@ -158,8 +255,12 @@
         color:#0f172a;
         outline:none;
         width:100%;
+        transition: all 0.3s ease;
     }
-    input:focus, select:focus{ border-color:#93c5fd; }
+    input:focus, select:focus{ 
+        border-color:#93c5fd;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
     /* Spinner and no-results */
     #search-spinner{ border:3px solid rgba(0,0,0,0.08); border-top-color:rgba(37,99,235,0.9); border-radius:50%; width:20px; height:20px; display:inline-block; animation:spin 1s linear infinite; }
     @keyframes spin{ to{ transform: rotate(360deg); } }
@@ -171,24 +272,51 @@
     .modal-box h3{ margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800; }
     .modal-box p{ margin:0 0 20px 0; color:#475569; font-size:14px; line-height:1.5; }
     .modal-box .modal-buttons{ display:flex; gap:10px; justify-content:flex-end; }
-    .modal-box .modal-btn{ padding:10px 16px; border-radius:10px; border:none; font-weight:700; cursor:pointer; font-size:14px; }
-    .modal-btn-confirm{ background:#2563eb; color:#fff; }
-    .modal-btn-confirm:hover{ opacity:.92; }
-    .modal-btn-cancel{ background:#e2e8f0; color:#0f172a; }
-    .modal-btn-cancel:hover{ background:#cbd5e1; }
+    .modal-box .modal-btn{ 
+        padding:10px 16px; 
+        border-radius:10px; 
+        border:none; 
+        font-weight:700; 
+        cursor:pointer; 
+        font-size:14px;
+        transition: all 0.3s ease;
+    }
+    .modal-btn-confirm{ 
+        background:#2563eb; 
+        color:#fff;
+    }
+    .modal-btn-confirm:hover{ 
+        opacity:.92;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+    }
+    .modal-btn-confirm:active{
+        transform: translateY(0);
+    }
+    .modal-btn-cancel{ 
+        background:#e2e8f0; 
+        color:#0f172a;
+    }
+    .modal-btn-cancel:hover{ 
+        background:#cbd5e1;
+        transform: translateY(-2px);
+    }
+    .modal-btn-cancel:active{
+        transform: translateY(0);
+    }
 </style>
 
 <div class="tabs">
-    <a class="tab {{ $activeTab==='pending'?'active':'' }}" href="/admin/requests?tab=pending">
+    <a class="tab pending {{ $activeTab==='pending'?'active':'' }}" href="/admin/requests?tab=pending">
         Pending <span class="badge">{{ $pending->count() }}</span>
     </a>
-    <a class="tab {{ $activeTab==='approved'?'active':'' }}" href="/admin/requests?tab=approved">
+    <a class="tab approved {{ $activeTab==='approved'?'active':'' }}" href="/admin/requests?tab=approved">
         Approved <span class="badge">{{ $approved->count() }}</span>
     </a>
-    <a class="tab {{ $activeTab==='ready_to_receive'?'active':'' }}" href="/admin/requests?tab=ready_to_receive">
+    <a class="tab ready {{ $activeTab==='ready_to_receive'?'active':'' }}" href="/admin/requests?tab=ready_to_receive">
         Ready to Receive <span class="badge">{{ $ready->count() }}</span>
     </a>
-    <a class="tab {{ $activeTab==='rejected'?'active':'' }}" href="/admin/requests?tab=rejected">
+    <a class="tab rejected {{ $activeTab==='rejected'?'active':'' }}" href="/admin/requests?tab=rejected">
         Rejected <span class="badge">{{ $rejected->count() }}</span>
     </a>
 </div>
@@ -216,7 +344,7 @@
 @forelse($shown as $req)
     @php $rid = 'req-'.$req->id; @endphp
 
-    <div class="req-card">
+    <div class="req-card status-{{ $req->status }}">
         <div class="req-header" onclick="toggleReq('{{ $rid }}')">
             <div>
                 <div class="req-title">
@@ -229,7 +357,7 @@
 
                 <div class="req-sub">
                     <span class="muted">Status:</span>
-                    <span class="status-pill">{{ strtoupper(str_replace('_',' ', $req->status)) }}</span>
+                    <span class="status-pill status-{{ $req->status }}">{{ strtoupper(str_replace('_',' ', $req->status)) }}</span>
                     <span class="muted" style="margin-left:10px;">Request ID:</span>
                     <b>#{{ $req->id }}</b>
                 </div>
@@ -379,7 +507,13 @@ let pendingAction = null;
 function toggleReq(id){
     const el = document.getElementById(id);
     if(!el) return;
+
+    // toggle the body open/closed
     el.classList.toggle('open');
+
+    // also toggle expanded state on the parent card so CSS can style header and card
+    const card = el.closest('.req-card');
+    if(card) card.classList.toggle('expanded');
 }
 
 function setMax(btn, maxValue){

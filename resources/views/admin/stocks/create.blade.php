@@ -7,37 +7,7 @@
 @endphp
 
 @section('sidebar')
-    <a href="{{ route('admin.dashboard') }}" class="{{ request()->is('admin') ? 'active' : '' }}">
-        Dashboard <small>Home</small>
-    </a>
-
-    <a href="/admin/categories" class="{{ request()->is('admin/categories*') ? 'active' : '' }}">
-        Categories <small>Manage</small>
-    </a>
-
-    <a href="/admin/stocks" class="{{ request()->is('admin/stocks*') ? 'active' : '' }}">
-        Stocks <small>Manage</small>
-    </a>
-
-    <a href="/admin/inbound" class="{{ request()->is('admin/inbound*') ? 'active' : '' }}">
-        Inbound <small>Records</small>
-    </a>
-
-    <a href="/admin/outbound" class="{{ request()->is('admin/outbound*') ? 'active' : '' }}">
-        Outbound <small>Records</small>
-    </a>
-
-    <a href="/admin/requests" class="{{ request()->is('admin/requests*') ? 'active' : '' }}">
-        Requests <small>Workflow</small>
-    </a>
-
-    <a href="/admin/password-reset" class="{{ request()->is('admin/password-reset*') ? 'active' : '' }}">
-        Password Reset <small>Requests</small>
-    </a>
-
-    <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') ? 'active' : '' }}">
-        Client Accounts <small>Create/Manage</small>
-    </a>
+    @include('partials.admin-sidebar')
 @endsection
 
 @section('content')
@@ -55,7 +25,7 @@
     }
     .btn-link:hover{ background: rgba(37,99,235,.18); }
 
-    .form-container{ max-width:600px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; }
+    .form-container{ max-width:600px; width:100%; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 4px 20px rgba(15,23,42,.06); }
     .form-group{ margin-bottom:20px; }
     .form-group label{ display:block; margin-bottom:8px; color: var(--text); font-weight:700; }
     .form-group select,
@@ -80,8 +50,16 @@
         text-decoration:none;
         font-weight:700;
         cursor:pointer;
+        transition: all 0.3s ease;
     }
-    .btn-submit:hover{ background: rgba(37,99,235,.9); }
+    .btn-submit:hover{ 
+        background: rgba(37,99,235,.9);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+    }
+    .btn-submit:active{
+        transform: translateY(0);
+    }
     .btn-cancel{
         display:inline-block;
         padding:10px 20px;
@@ -92,8 +70,16 @@
         text-decoration:none;
         font-weight:700;
         cursor:pointer;
+        transition: all 0.3s ease;
     }
-    .btn-cancel:hover{ background: var(--line); }
+    .btn-cancel:hover{ 
+        background: var(--line);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,.08);
+    }
+    .btn-cancel:active{
+        transform: translateY(0);
+    }
 
     .error-message{ color: var(--red); margin-bottom:16px; padding:12px; background: rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); border-radius:8px; }
     .error-message ul{ margin:0; padding-left:20px; }

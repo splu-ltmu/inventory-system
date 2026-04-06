@@ -43,6 +43,6 @@
     <label>Hidden (Admin Only):</label>
     <input type="checkbox" name="hidden" value="1" {{ $stock->hidden ? 'checked' : '' }}><br><br>
 
-    <button type="submit">Update Stock</button>
+    <button type="submit" style="padding:10px 16px; border-radius:8px; border:1px solid #2563eb; background:#2563eb; color:#fff; cursor:pointer; font-weight:700; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(37,99,235,.2)';" onmouseout="this.style.transform=''; this.style.boxShadow='';" onclick="this.style.transform='translateY(0)';">Update Stock</button>
 </form>
 @endsection

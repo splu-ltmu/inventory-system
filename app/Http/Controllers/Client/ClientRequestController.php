@@ -24,38 +24,53 @@ class ClientRequestController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'office' => ['required', 'string', 'max:255'],
             'items'  => ['required', 'array', 'min:1'], // items[stockId] = qty
             'items.*'=> ['required', 'integer', 'min:1'],
         ]);
 
-        // Create ONE request (header)
-        $stockRequest = StockRequest::create([
-            'client_id' => Auth::id(),
-            'office' => $data['office'],
-            'status' => 'pending',
-            'verification_code' => null,
-        ]);
-
-        // Create request items
+        // Prepare and validate items first (prevent creating empty header)
+        $prepared = [];
         foreach ($data['items'] as $stockId => $qty) {
             $stock = Stock::find($stockId);
             if (!$stock) continue;
 
-            // clamp qty to available stock (optional safeguard)
             $qty = max(1, (int)$qty);
             $qty = min($qty, (int)$stock->stock);
+            if ($qty <= 0) continue;
 
-            StockRequestItem::create([
-                'stock_request_id' => $stockRequest->id,
-                'stock_id'         => $stockId,
-                'requested_qty'    => $qty,
-
-                // IMPORTANT: admin hasn't decided yet
-                'approved_qty'     => 0,      // ✅ NOT 0
-                'status'           => 'pending', // ✅ pending
-            ]);
+            $prepared[] = [
+                'stock' => $stock,
+                'stock_id' => $stockId,
+                'qty' => $qty,
+            ];
         }
+
+        if (empty($prepared)) {
+            return redirect()->back()->withInput()->with('error', 'No valid items to request.');
+        }
+
+        // use the logged-in user's office (fallback to any submitted value)
+        $office = Auth::user()->office ?? $request->input('office', null);
+
+        // Create request + items inside a transaction
+        \DB::transaction(function () use ($prepared, $office, &$stockRequest) {
+            $stockRequest = StockRequest::create([
+                'client_id' => Auth::id(),
+                'office' => $office,
+                'status' => 'pending',
+                'verification_code' => null,
+            ]);
+
+            foreach ($prepared as $p) {
+                StockRequestItem::create([
+                    'stock_request_id' => $stockRequest->id,
+                    'stock_id'         => $p['stock_id'],
+                    'requested_qty'    => $p['qty'],
+                    'approved_qty'     => 0,
+                    // 'status' will use DB default (pending)
+                ]);
+            }
+        });
 
         return redirect()->route('client.requests')
             ->with('success', 'Request submitted. Wait for admin approval.');

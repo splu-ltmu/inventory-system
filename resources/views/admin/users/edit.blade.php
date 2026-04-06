@@ -7,37 +7,7 @@
 @endphp
 
 @section('sidebar')
-    <a href="{{ route('admin.dashboard') }}" class="{{ request()->is('admin') ? 'active' : '' }}">
-        Dashboard <small>Home</small>
-    </a>
-
-    <a href="/admin/categories" class="{{ request()->is('admin/categories*') ? 'active' : '' }}">
-        Categories <small>Manage</small>
-    </a>
-
-    <a href="/admin/stocks" class="{{ request()->is('admin/stocks*') ? 'active' : '' }}">
-        Stocks <small>Manage</small>
-    </a>
-
-    <a href="/admin/inbound" class="{{ request()->is('admin/inbound*') ? 'active' : '' }}">
-        Inbound <small>Records</small>
-    </a>
-
-    <a href="/admin/outbound" class="{{ request()->is('admin/outbound*') ? 'active' : '' }}">
-        Outbound <small>Records</small>
-    </a>
-
-    <a href="/admin/requests" class="{{ request()->is('admin/requests*') ? 'active' : '' }}">
-        Requests <small>Workflow</small>
-    </a>
-
-    <a href="/admin/password-reset" class="{{ request()->is('admin/password-reset*') ? 'active' : '' }}">
-        Password Reset <small>Requests</small>
-    </a>
-
-    <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') ? 'active' : '' }}">
-        Client Accounts <small>Create/Manage</small>
-    </a>
+    @include('partials.admin-sidebar')
 @endsection
 
 @section('content')
@@ -72,8 +42,16 @@
         text-decoration:none;
         font-weight:700;
         cursor:pointer;
+        transition: all 0.3s ease;
     }
-    .btn-submit:hover{ background: rgba(37,99,235,.9); }
+    .btn-submit:hover{ 
+        background: rgba(37,99,235,.9);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+    }
+    .btn-submit:active{
+        transform: translateY(0);
+    }
     .btn-cancel{
         display:inline-block;
         padding:10px 20px;
@@ -84,8 +62,16 @@
         text-decoration:none;
         font-weight:700;
         cursor:pointer;
+        transition: all 0.3s ease;
     }
-    .btn-cancel:hover{ background: var(--line); }
+    .btn-cancel:hover{ 
+        background: var(--line);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,.08);
+    }
+    .btn-cancel:active{
+        transform: translateY(0);
+    }
 
     .error-message{ color: var(--red); margin-bottom:16px; padding:12px; background: rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); border-radius:8px; }
     .error-message ul{ margin:0; padding-left:20px; }
@@ -124,6 +110,25 @@
             <label for="email">Email Address:</label>
             <input type="email" name="email" id="email" placeholder="Enter email address" required value="{{ old('email', $user->email) }}">
             @error('email')
+                <span class="error-text">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="form-group">
+            <label for="role">Role:</label>
+            <select name="role" id="role" required style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:14px;">
+                <option value="client" {{ old('role', $user->role) == 'client' ? 'selected' : '' }}>Client</option>
+                <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+            </select>
+            @error('role')
+                <span class="error-text">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="form-group">
+            <label for="office">Office / Department (optional):</label>
+            <input type="text" name="office" id="office" placeholder="e.g. Purchasing" value="{{ old('office', $user->office) }}">
+            @error('office')
                 <span class="error-text">{{ $message }}</span>
             @enderror
         </div>

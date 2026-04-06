@@ -13,6 +13,7 @@
           'description' => $s->description,
           'unit' => $s->unit,
           'stock' => $s->stock,
+          'category' => $s->category?->name ?? 'Unknown',
       ];
   })->values();
 @endphp
@@ -20,6 +21,10 @@
 @section('sidebar')
     <a href="{{ route('client.dashboard') }}" class="{{ request()->is('client') ? 'active' : '' }}">
         Dashboard <small>Home</small>
+    </a>
+
+    <a href="{{ route('client.summary') }}" class="{{ request()->is('client/summary*') ? 'active' : '' }}">
+        Summary <small>Transactions</small>
     </a>
 
     <a href="{{ route('client.stocks') }}" class="{{ request()->is('client/stocks*') ? 'active' : '' }}">
@@ -45,8 +50,16 @@
         color:#fff;
         cursor:pointer;
         font-weight:700;
+        transition: all 0.3s ease;
     }
-    .btn:hover{ opacity:.92; }
+    .btn:hover{ 
+        opacity:.92;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+    }
+    .btn:active{
+        transform: translateY(0);
+    }
     .btn-ghost{
         padding:10px 12px;
         border-radius:12px;
@@ -55,8 +68,36 @@
         color:#0f172a;
         cursor:pointer;
         font-weight:700;
+        transition: all 0.3s ease;
     }
-    .btn-ghost:hover{ background:#f8fafc; }
+    .btn-ghost:hover{ 
+        background:#f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,.08);
+    }
+    .btn-ghost:active{
+        transform: translateY(0);
+    }
+
+    .btn-cancel{
+        padding:10px 12px;
+        border-radius:12px;
+        border:1px solid #dc2626; /* red border */
+        background:#fff;
+        color:#dc2626; /* red text */
+        cursor:pointer;
+        font-weight:700;
+        transition: all 0.3s ease;
+    }
+    .btn-cancel:hover{ 
+        background:#b91c1c; 
+        color:#fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(220,38,38,.2);
+    }
+    .btn-cancel:active{
+        transform: translateY(0);
+    }
 
     table{ width:100%; border-collapse: collapse; }
     th, td{ border:1px solid #e2e8f0; padding:10px; text-align:left; }
@@ -85,14 +126,22 @@
         z-index:9999;
         padding:18px;
     }
+    .modal.active{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        overflow-y:auto;
+    }
     .modal-card{
         max-width: 900px;
-        margin: 40px auto;
+        width:100%;
+        max-height: calc(100vh - 36px);
         background:#ffffff;
         border:1px solid #e2e8f0;
         border-radius:16px;
-        overflow:hidden;
+        overflow:auto;
         box-shadow:0 18px 48px rgba(15,23,42,.18);
+        flex-shrink:0;
     }
     .modal-head{
         display:flex;
@@ -113,6 +162,28 @@
         display:grid;
         grid-template-columns: 1.2fr .8fr;
         gap:14px;
+    }
+    
+    /* show cart toggle button on mobile */
+    @media (max-width: 640px){
+        .cart-toggle{ display:flex !important; }
+    }
+
+    /* Mobile: hide cart by default, show search items */
+    @media (max-width: 640px){
+        .modal-body{
+            grid-template-columns: 1fr;
+        }
+        .modal-body > .cart{
+            display:none;
+        }
+        /* When toggled, hide search and show cart only */
+        .modal-body.show-cart > div:first-child{
+            display:none !important;
+        }
+        .modal-body.show-cart > .cart{
+            display:block !important;
+        }
     }
     .field{
         display:flex;
@@ -155,6 +226,40 @@
     .qty{
         width:90px;
     }
+    
+    .modal-btn-cancel, .modal-btn-confirm {
+        padding:10px 16px; 
+        border-radius:10px; 
+        border:none; 
+        font-weight:700; 
+        cursor:pointer; 
+        font-size:14px;
+        transition: all 0.3s ease;
+    }
+    .modal-btn-cancel {
+        background:#e2e8f0; 
+        color:#0f172a;
+    }
+    .modal-btn-cancel:hover {
+        background:#cbd5e1;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,.1);
+    }
+    .modal-btn-cancel:active {
+        transform: translateY(0);
+    }
+    .modal-btn-confirm {
+        background:#2563eb; 
+        color:#fff;
+    }
+    .modal-btn-confirm:hover {
+        background:rgba(37,99,235,.9);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+    }
+    .modal-btn-confirm:active {
+        transform: translateY(0);
+    }
 </style>
 
 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
@@ -170,24 +275,24 @@
         <tr>
             <th style="min-width:120px;">ID No</th>
             <th style="min-width:220px;">Description</th>
+            <th style="min-width:180px;">Category</th>
             <th style="min-width:80px;">Unit</th>
             <th style="min-width:120px;">Stock</th>
         </tr>
         @foreach($stocks as $s)
+            @if($s->stock > 0)
             <tr>
                 <td><b>{{ $s->id_no }}</b></td>
-                <td>{{ $s->description }}</td>
-                <td>{{ $s->unit }}</td>
+                <td>{{ $s->description }}</td>                <td>{{ $s->category?->name ?? 'Unknown' }}</td>                <td>{{ $s->unit }}</td>
                 <td>
                     @if($s->stock >= 50)
-                        <span class="pill ok">{{ $s->stock }} available</span>
-                    @elseif($s->stock > 0 && $s->stock <= 49)
-                        <span class="pill low">{{ $s->stock }} available</span>
+                        <span class="pill ok">Available</span>
                     @else
-                        <span class="pill bad">Out of stock</span>
+                        <span class="pill low">Available</span>
                     @endif
                 </td>
             </tr>
+            @endif
         @endforeach
     </table>
 </div>
@@ -198,8 +303,8 @@
         <h3 id="confirmTitle" style="margin:0 0 8px 0; font-size:18px; color:#0f172a; font-weight:800;">Confirm</h3>
         <p id="confirmMessage" style="margin:0 0 20px 0; color:#475569; font-size:14px; line-height:1.5;">Are you sure?</p>
         <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <button type="button" onclick="closeConfirmModal()" style="padding:10px 16px; border-radius:10px; border:none; background:#e2e8f0; color:#0f172a; font-weight:700; cursor:pointer; font-size:14px;">Cancel</button>
-            <button type="button" onclick="confirmAction()" style="padding:10px 16px; border-radius:10px; border:none; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; font-size:14px;">Confirm</button>
+            <button type="button" class="modal-btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+            <button type="button" class="modal-btn-confirm" onclick="confirmAction()">Confirm</button>
         </div>
     </div>
 </div>
@@ -208,22 +313,35 @@
 <div class="modal" id="reqModal">
     <div class="modal-card">
         <div class="modal-head">
-            <div>
+            <div style="flex:1;">
                 <div class="modal-title">Create Request (Multiple Items)</div>
-                <div class="muted">Search items, add to list, set quantities, then submit.</div>
+                <div class="muted">Search items, add to list, set quantities, then submit. <button class="btn-ghost" type="button" onclick="closeReqModal()" style="position:absolute; top:14px; right:16px; background:none; border:none; color:#0f172a; font-size:18px; padding:0; width:24px; height:24px; display:flex; align-items:center; justify-content:center;">✕</button></div>
+                 
             </div>
-            <button class="btn-ghost" type="button" onclick="closeReqModal()">✕</button>
+           
         </div>
 
         <form method="POST" action="{{ route('client.requests.store') }}">
             @csrf
+
+            <!-- cart toggle button for mobile -->
+            <button type="button" id="cartToggleBtn" class="cart-toggle btn-ghost" onclick="toggleCartView()" title="Toggle View" style="display:none; width:100%; padding:12px; margin:0 0 12px 0; justify-content:center; gap:8px;">
+                See Cart
+                <!-- cart icon SVG -->
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13v8a2 2 0 002 2h10a2 2 0 002-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="9" cy="21" r="1" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="20" cy="21" r="1" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </button>
 
             <div class="modal-body">
                 {{-- LEFT: search & add --}}
                 <div>
                     <div class="field">
                         <label><b>Office</b></label>
-                        <input type="text" name="office" placeholder="e.g., ICT" required>
+                        <div class="muted">{{ Auth::user()->office ?? '-' }}</div>
+                        <input type="hidden" name="office" value="{{ Auth::user()->office ?? '' }}">
                     </div>
 
                     <div class="field">
@@ -278,13 +396,34 @@ const STOCKS = @json($stocksJson);
 
 let cart = {}; // { stockId: qty }
 
+function toggleCartView(){
+    const body = document.querySelector('#reqModal .modal-body');
+    body.classList.toggle('show-cart');
+    const btn = document.getElementById('cartToggleBtn');
+    if (body.classList.contains('show-cart')) {
+        btn.innerHTML = `Stocks <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13v8a2 2 0 002 2h10a2 2 0 002-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="9" cy="21" r="1" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="20" cy="21" r="1" stroke="currentColor" stroke-width="2"/>
+                </svg>`;
+    } else {
+        btn.innerHTML = `See Cart <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13v8a2 2 0 002 2h10a2 2 0 002-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="9" cy="21" r="1" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="20" cy="21" r="1" stroke="currentColor" stroke-width="2"/>
+                </svg>`;
+    }
+}
+
 function openReqModal(){
-    document.getElementById('reqModal').style.display = 'block';
+    const modal = document.getElementById('reqModal');
+    modal.classList.add('active');
     renderStockList();
     renderCart();
 }
 function closeReqModal(){
-    document.getElementById('reqModal').style.display = 'none';
+    const modal = document.getElementById('reqModal');
+    modal.classList.remove('active');
 }
 document.addEventListener('click', (e) => {
     const modal = document.getElementById('reqModal');
@@ -300,15 +439,18 @@ function renderStockList(){
     tbody.innerHTML = '';
 
     const filtered = STOCKS.filter(s => {
+        // exclude out-of-stock items from the modal list
+        if (s.stock <= 0) return false;
         if (!q) return true;
         return (s.id_no || '').toLowerCase().includes(q) || (s.description || '').toLowerCase().includes(q);
     });
 
     filtered.forEach(s => {
         const btnText = cart[s.id] ? 'Added' : 'Add';
-        const btnDisabled = (s.stock <= 0 || cart[s.id]) ? 'disabled' : '';
+        const btnDisabled = cart[s.id] ? 'disabled' : '';
         const tr = document.createElement('tr');
-        const stockBadge = s.stock >= 50 ? `<span class="pill ok">${s.stock} avail</span>` : (s.stock > 0 ? `<span class="pill low">${s.stock} avail</span>` : `<span class="pill bad">Out</span>`);
+        // show availability level only (no numeric count)
+        const stockBadge = s.stock >= 50 ? `<span class="pill ok">Available</span>` : `<span class="pill low">Available</span>`;
         tr.innerHTML = `
             <td><b>${escapeHtml(s.id_no)}</b></td>
             <td>${escapeHtml(s.description)}</td>
@@ -411,72 +553,53 @@ function escapeHtml(str){
     }[m]));
 }
 
-let confirmCallback = null;
+// --- single, reliable confirm/submit implementation ---
+let __confirmCb = null;
 
 function confirmSubmitRequest(){
     const keys = Object.keys(cart);
-    if(keys.length === 0){
+    if (keys.length === 0) {
         alert('Please add at least one item.');
         return;
     }
-    confirmCallback = 'submitRequestConfirmed';
-    showConfirmModal('Submit Request', 'Submit this request for approval? You can view and manage it in My Requests.');
-}
 
-function submitRequestConfirmed(){
-    const form = document.querySelector('#reqModal form');
-    if(form) form.submit();
-}
+    // ensure hidden inputs exist before showing confirmation
+    renderHiddenInputs();
 
-function showConfirmModal(title, message){
-    document.getElementById('confirmTitle').textContent = title;
-    document.getElementById('confirmMessage').textContent = message;
-    document.getElementById('confirmModalOverlay').style.display = 'flex';
-}
-
-function closeConfirmModal(){
-    document.getElementById('confirmModalOverlay').style.display = 'none';
-    confirmCallback = null;
-}
-
-function confirmAction(){
-    if(confirmCallback === 'submitRequestConfirmed'){
-        submitRequestConfirmed();
-    }
-    closeConfirmModal();
-}
-let pendingSubmitForm = null;
-
-function confirmSubmitRequest(){
-    const keys = Object.keys(cart);
-    if(keys.length === 0){
-        alert('Please add at least one item.');
-        return;
-    }
+    // show modal and set callback name
     showConfirmModal('Submit Request', 'Submit this request for approval? You can view and manage it in My Requests.', 'submitRequestConfirmed');
 }
 
 function submitRequestConfirmed(){
+    // ensure hidden inputs are up-to-date then submit
+    renderHiddenInputs();
+    showLoading('Submitting request...');
     const form = document.querySelector('#reqModal form');
-    if(form) form.submit();
-    closeConfirmModal();
+    if (form) {
+        // disable submit button to avoid double-submits
+        const btn = form.querySelector('button[type="button"].btn');
+        if (btn) btn.disabled = true;
+        form.submit();
+    }
 }
 
-function showConfirmModal(title, message, actionCallback){
+function showConfirmModal(title, message, callbackName){
     document.getElementById('confirmTitle').textContent = title;
     document.getElementById('confirmMessage').textContent = message;
-    window.confirmCallback = actionCallback;
+    window.__confirmCb = callbackName || null;
     document.getElementById('confirmModalOverlay').style.display = 'flex';
 }
 
 function closeConfirmModal(){
     document.getElementById('confirmModalOverlay').style.display = 'none';
-    window.confirmCallback = null;
+    window.__confirmCb = null;
 }
 
 function confirmAction(){
-    if(window.confirmCallback && typeof window[window.confirmCallback] === 'function'){
-        window[window.confirmCallback]();
+    if (window.__confirmCb && typeof window[window.__confirmCb] === 'function') {
+        window[window.__confirmCb]();
     }
-}</script>
+    closeConfirmModal();
+}
+</script>
 @endsection

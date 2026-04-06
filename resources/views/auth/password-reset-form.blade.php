@@ -133,16 +133,19 @@
         font-weight:700;
         font-size:14px;
         cursor:pointer;
-        transition:background .2s;
+        transition: all 0.3s ease;
         margin-top:8px;
     }
 
     .btn-submit:hover{
         background:rgba(37,99,235,.9);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(37,99,235,.2);
     }
 
     .btn-submit:active{
         background:rgba(37,99,235,.8);
+        transform: translateY(0);
     }
 
     .error-message{

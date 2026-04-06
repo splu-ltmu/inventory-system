@@ -164,19 +164,19 @@
         font-weight:700;
         font-size:14px;
         cursor:pointer;
-        transition:background .2s;
+        transition: all 0.3s ease;
         margin-top:8px;
     }
 
     .btn-submit:hover{
+        background:rgba(37,99,235,.9);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(37,99,235,.3);
+        box-shadow: 0 8px 16px rgba(37,99,235,.2);
     }
 
     .btn-submit:active{
         background:rgba(37,99,235,.8);
-        transform: translateY(0
-        background:rgba(37,99,235,.8);
+        transform: translateY(0);
     }
 
     .error-message{
@@ -229,10 +229,32 @@
                 <input type="email" id="email" name="email" placeholder="Enter your email" required>
             </div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
-            </div>
+            <div class="form-group" style="position: relative;">
+    <label for="password">Password</label>
+    
+    <input 
+        type="password" 
+        id="password" 
+        name="password" 
+        placeholder="Enter your password" 
+        required
+        style="width: 100%; padding-right: 40px;"
+    >
+
+    <!-- Eye Icon -->
+    <span 
+        onclick="togglePassword()" 
+        style="
+            position: absolute;
+            right: 10px;
+            top: 38px;
+            cursor: pointer;
+        "
+        id="eyeIcon"
+    >
+        👁️
+    </span>
+</div>
 
             <button type="submit" class="btn-submit">Sign In</button>
         </form>
@@ -242,10 +264,10 @@
         </div>
     </div>
     <!-- Loading overlay for login page -->
-    <div id="global-loading" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:rgba(255,255,255,0.98); padding:18px 20px; border-radius:12px; display:flex; gap:12px; align-items:center; box-shadow:0 8px 30px rgba(2,6,23,.4);">
-            <div style="width:28px; height:28px; border-radius:50%; border:3px solid rgba(0,0,0,.08); border-top-color: #2563eb; animation: spin 1s linear infinite;"></div>
-            <div style="font-weight:700; color: #0f172a;" id="loading-message">Signing in...</div>
+    <div id="global-loading" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:transparent; padding:40px; border-radius:12px; display:flex; flex-direction:column; gap:24px; align-items:center; box-shadow:none;">
+            <div style="width:60px; height:60px; border-radius:50%; border:4px solid transparent; border-top-color: #2563eb; border-right-color: #2563eb; animation: spin 1.2s linear infinite;"></div>
+            <div style="font-weight:700; color: #fff; font-size:16px;" id="loading-message">Signing in...</div>
         </div>
     </div>
 
@@ -260,6 +282,20 @@
     }
     function hideLoading(){ var overlay = document.getElementById('global-loading'); if(overlay) overlay.style.display = 'none'; }
     window.addEventListener('pageshow', function(){ hideLoading(); });
+
+
+    function togglePassword() {
+    const password = document.getElementById("password");
+    const eye = document.getElementById("eyeIcon");
+
+    if (password.type === "password") {
+        password.type = "text";
+        eye.textContent = "🙈";
+    } else {
+        password.type = "password";
+        eye.textContent = "👁️";
+    }
+}
     </script>
 </body>
 </html>

@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
     zip \
@@ -15,8 +17,10 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install \
+# Install PHP extensions (including gd)
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+    gd \
     pdo_mysql \
     mbstring \
     exif \

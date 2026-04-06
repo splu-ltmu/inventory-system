@@ -28,7 +28,8 @@ class CategoryController extends Controller
 
         Category::create($request->only('name', 'code'));
 
-        return redirect()->route('categories.index')->with('success', 'Category created.');
+        // stay on the create page so user can add more if needed
+        return redirect()->route('categories.create')->with('success', 'Category created successfully.');
     }
 
     public function edit(Category $category)

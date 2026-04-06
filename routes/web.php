@@ -81,9 +81,19 @@ Route::prefix('admin')
 
         Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
+        // Admin summary / transactions
+        Route::get('/summary', [AdminDashboardController::class, 'summary'])->name('admin.summary');
+
+        // AJAX endpoint for monthly chart analytics
+        Route::get('/dashboard/chart-data', [AdminDashboardController::class, 'chartData'])->name('admin.dashboard.chartdata');
+
         Route::resource('categories', CategoryController::class);
         Route::resource('stocks', AdminStockController::class);
         Route::get('/stocks/generate-id/{categoryId}', [AdminStockController::class, 'generateId'])->name('stocks.generateId');
+        Route::post('/stocks/{stock}/assign-category', [AdminStockController::class, 'assignCategory'])->name('stocks.assignCategory');
+        Route::get('/inbound/template', [InboundController::class, 'template'])->name('inbound.template');
+        Route::post('/inbound/import', [InboundController::class, 'import'])->name('inbound.import');
+        Route::get('/inbound/suggestions', [InboundController::class, 'suggestions'])->name('inbound.suggestions');
         Route::resource('inbound', InboundController::class);
         Route::resource('outbound', OutboundController::class);
 
@@ -160,6 +170,9 @@ Route::prefix('client')
     ->group(function () {
 
         Route::get('/', [ClientDashboardController::class, 'index'])->name('client.dashboard');
+
+        // Client summary/overview page
+        Route::get('/summary', [ClientDashboardController::class, 'summary'])->name('client.summary');
 
         Route::get('/stocks', [ClientStockController::class, 'index'])->name('client.stocks');
 

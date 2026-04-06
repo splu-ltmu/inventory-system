@@ -13,7 +13,8 @@ class StockController extends Controller
     public function index()
     {
         $stocks = Stock::with('category')->get();
-        return view('admin.stocks.index', compact('stocks'));
+        $allCategories = Category::orderBy('name')->get();
+        return view('admin.stocks.index', compact('stocks', 'allCategories'));
     }
 
     // Show form to create a stock
@@ -66,5 +67,78 @@ class StockController extends Controller
         $newId = $category->code . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         return response()->json(['id_no' => $newId]);
+    }
+
+    // Assign or create category for a stock (AJAX)
+    public function assignCategory(Request $request, Stock $stock)
+    {
+        $request->validate([
+            'category_id' => 'nullable|exists:categories,id',
+            'new_category_name' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:255',
+        ]);
+
+        $categoryId = $request->input('category_id');
+        $newName = trim((string) $request->input('new_category_name', ''));
+
+        if (!$categoryId && $newName !== '') {
+            $code = $this->generateCategoryCode($newName);
+            $category = Category::create(['name' => $newName, 'code' => $code]);
+            $categoryId = $category->id;
+        }
+
+        if ($categoryId) {
+            $stock->category_id = $categoryId;
+            // update description when supplied from modal
+            if ($request->filled('description')) {
+                $stock->description = $request->input('description');
+            }
+            $stock->save();
+            $categoryName = Category::find($categoryId)?->name ?? null;
+            return response()->json([
+                'success' => true,
+                'category_name' => $categoryName,
+                'stock_description' => $stock->description,
+                'stock_id_no' => $stock->id_no,
+            ]);
+        }
+
+        // If no category selected or created, assign to `Unknown` (table requires a category_id)
+        $unknown = Category::firstOrCreate(['name' => 'Unknown'], ['code' => 'UK']);
+        $stock->category_id = $unknown->id;
+        if ($request->filled('description')) {
+            $stock->description = $request->input('description');
+        }
+        $stock->save();
+        return response()->json([
+            'success' => true,
+            'category_name' => $unknown->name,
+            'stock_description' => $stock->description,
+            'stock_id_no' => $stock->id_no,
+        ]);
+    }
+
+    // Helper: generate 2-letter category code (tries sensible fallbacks)
+    private function generateCategoryCode(string $name): string
+    {
+        $clean = preg_replace('/[^A-Za-z]/', '', strtoupper($name));
+        $base = str_pad(substr($clean, 0, 2), 2, 'X');
+
+        if (!Category::where('code', $base)->exists()) {
+            return $base;
+        }
+
+        $letters = range('A', 'Z');
+        foreach ($letters as $l) {
+            $try = $base[0] . $l;
+            if (!Category::where('code', $try)->exists()) return $try;
+        }
+
+        foreach ($letters as $l) {
+            $try = $l . $base[1];
+            if (!Category::where('code', $try)->exists()) return $try;
+        }
+
+        return strtoupper(substr(md5($name . time()), 0, 2));
     }
 }

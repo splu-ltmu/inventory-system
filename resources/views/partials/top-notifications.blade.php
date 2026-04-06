@@ -14,8 +14,8 @@
 @if($isAdmin && request()->is('admin*'))
 <style>
 .top-notif{ display:flex; align-items:center; gap:8px; position:relative; }
-.top-notif button{ background:transparent;border:none;cursor:pointer;font-size:18px;padding:6px 8px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; }
-.top-notif button:hover{ background:rgba(2,6,23,.03); }
+.top-notif button{ background:transparent;border:none;cursor:pointer;font-size:18px;padding:6px 8px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; transition: all 0.3s ease; }
+.top-notif button:hover{ background:rgba(2,6,23,.03); transform: translateY(-1px); box-shadow: 0 4px 8px rgba(2,6,23,.05); }
 .top-notif .icon{ width:20px; height:20px; display:inline-block; }
 .top-notif .badge{ position:absolute; top:-6px; right:-6px; background:#ef4444;color:#fff;padding:2px 6px;border-radius:999px;font-weight:700;font-size:11px; }
 .top-notif .dropdown{ display:none; position:absolute; right:0; top:calc(100% + 8px); width:320px; background:var(--panel, #fff); border:1px solid var(--line); border-radius:10px; padding:12px; box-shadow:0 8px 20px rgba(2,6,23,.08); z-index:9999; }
