@@ -54,7 +54,6 @@
                 <div style="color: var(--muted); font-size:13px; margin-top:4px;">{{ $subaccount->description ?: 'No description added.' }}</div>
                 <div style="color: var(--muted); font-size:13px; margin-top:4px;">Login Email: {{ optional($subaccount->user)->email ?? 'Not configured' }}</div>
             </div>
-            <a href="{{ route('client.account') }}" class="btn-primary">Back to Account</a>
         </div>
         <div class="card-body">
             <div class="grid-2">
