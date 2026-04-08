@@ -13,10 +13,10 @@ services:
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE:-inventory_system}
-      - DB_USERNAME=${DB_USERNAME:-root}
+      - DB_USERNAME=${DB_USERNAME:-inventory_user}
       - DB_PASSWORD=${DB_PASSWORD:-root}
       - CACHE_DRIVER=file
-      - SESSION_DRIVER=file
+      - SESSION_DRIVER=${SESSION_DRIVER:-database}
       - QUEUE_CONNECTION=database
       - MAIL_MAILER=${MAIL_MAILER:-smtp}
       - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
@@ -53,8 +53,6 @@ services:
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-inventory_system}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
-      MYSQL_USER: ${DB_USERNAME:-inventory_user}
     ports:
       - "${DB_PORT:-3307}:3306"
     volumes:
