@@ -98,14 +98,14 @@ class AccountController extends Controller
             abort(403);
         }
 
-        $allocatedQty = ClientSubaccountAllocation::where('stock_request_item_id', $item->id)
-            ->sum('allocated_qty');
-
-        $remaining = (int)$item->approved_qty - (int)$allocatedQty;
+        // Check remaining inventory (approved - already distributed)
+        $distributed = $item->distributed_qty ?? 0;
+        $remaining = (int)$item->approved_qty - (int)$distributed;
         if ($validated['allocated_qty'] > $remaining) {
-            return redirect()->route('client.account')->with('error', 'Not enough approved quantity available for allocation.');
+            return redirect()->route('client.account', ['tab' => 'distribution'])->with('error', 'Not enough inventory available for distribution.');
         }
 
+        // Create allocation for the subaccount
         $allocation = ClientSubaccountAllocation::firstOrNew([
             'subaccount_id' => $subaccount->id,
             'stock_request_item_id' => $item->id,
@@ -113,6 +113,10 @@ class AccountController extends Controller
         $allocation->allocated_qty = ($allocation->allocated_qty ?? 0) + $validated['allocated_qty'];
         $allocation->save();
 
-        return redirect()->route('client.account')->with('success', 'Item allocated to subaccount successfully.');
+        // Deduct from My Inventory by updating distributed_qty
+        $item->distributed_qty = ($item->distributed_qty ?? 0) + $validated['allocated_qty'];
+        $item->save();
+
+        return redirect()->route('client.account', ['tab' => 'distribution'])->with('success', 'Item distributed to subaccount successfully.');
     }
 }

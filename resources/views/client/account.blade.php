@@ -385,17 +385,17 @@
 
     <div class="settings-card">
         <div class="card-header" onclick="toggleCard('allocate-card')">
-            <h3>Allocate Items to Subaccounts</h3>
+            <h3>Distribute Items to Subaccounts</h3>
             <span class="card-toggle">Click to expand</span>
         </div>
 
         <div id="allocate-card" class="card-body">
-            <p style="color: var(--muted); margin: 0 0 16px;">Allocate items from "My Inventory" to a subaccount. The subaccount can then distribute them to members.</p>
+            <p style="color: var(--muted); margin: 0 0 16px;">Distribute items directly from your inventory to subaccounts. This will deduct from your "My Inventory".</p>
 
             @if($approvedInventory->isEmpty())
-                <p style="color: var(--muted);">No items are available for allocation.</p>
+                <p style="color: var(--muted);">No items are available in your inventory for distribution.</p>
             @elseif($subaccounts->isEmpty())
-                <p style="color: var(--muted);">Create a subaccount first before allocating items.</p>
+                <p style="color: var(--muted);">Create a subaccount first before distributing items.</p>
             @else
                 <form method="POST" action="{{ route('client.account.distributeToSubaccounts') }}">
                     @csrf
@@ -410,24 +410,26 @@
                         @error('subaccount_id')<span style="color: var(--danger); font-size: 12px;">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group">
-                        <label for="stock_request_item_id_dist">Approved Item</label>
+                        <label for="stock_request_item_id_dist">Item from My Inventory</label>
                         <select id="stock_request_item_id_dist" name="stock_request_item_id" required>
                             @foreach($approvedInventory as $item)
                                 @php
                                     $distributed = $item->distributed_qty ?? 0;
                                     $myInventory = max(0, $item->approved_qty - $distributed);
                                 @endphp
-                                <option value="{{ $item->id }}">{{ $item->stock->description ?? $item->stock->name ?? 'Item' }} — my inventory: {{ $myInventory }}</option>
+                                @if($myInventory > 0)
+                                <option value="{{ $item->id }}">{{ $item->stock->description ?? $item->stock->name ?? 'Item' }} — available: {{ $myInventory }}</option>
+                                @endif
                             @endforeach
                         </select>
                         @error('stock_request_item_id')<span style="color: var(--danger); font-size: 12px;">{{ $message }}</span>@enderror
                     </div>
                     <div class="form-group">
-                        <label for="allocated_qty_dist">Quantity to Allocate</label>
+                        <label for="allocated_qty_dist">Quantity to Distribute</label>
                         <input type="number" id="allocated_qty_dist" name="allocated_qty" min="1" required value="{{ old('allocated_qty', 1) }}">
                         @error('allocated_qty')<span style="color: var(--danger); font-size: 12px;">{{ $message }}</span>@enderror
                     </div>
-                    <button type="submit" class="btn-submit">Allocate Item</button>
+                    <button type="submit" class="btn-submit">Distribute Item</button>
                 </form>
             @endif
         </div>
