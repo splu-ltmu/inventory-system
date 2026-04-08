@@ -12,8 +12,7 @@ class UserManagementController extends Controller
 {
     public function index()
     {
-        // show all users (clients and admins) in the admin users list
-        $users = User::orderBy('created_at', 'desc')->get();
+        $users = User::whereIn('role', ['admin', 'client'])->orderBy('created_at', 'desc')->get();
         return view('admin.users.index', compact('users'));
     }
 
@@ -47,12 +46,18 @@ class UserManagementController extends Controller
     public function edit($id)
     {
         $user = User::findOrFail($id);
+        if ($user->role === 'subaccount') {
+            abort(403, 'Unauthorized');
+        }
         return view('admin.users.edit', compact('user'));
     }
 
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        if ($user->role === 'subaccount') {
+            abort(403, 'Unauthorized');
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -73,6 +78,9 @@ class UserManagementController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
+        if ($user->role === 'subaccount') {
+            abort(403, 'Unauthorized');
+        }
         $user->delete();
 
         return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');

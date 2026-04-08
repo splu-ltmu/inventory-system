@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Client\ClientSubaccountController;
+use App\Models\ClientSubaccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,11 +28,18 @@ class ClientAuthController extends Controller
 
         $request->session()->regenerate();
 
-        if (Auth::user()->role !== 'client') {
+        if (!in_array(Auth::user()->role, ['client', 'subaccount'], true)) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-            return back()->with('error', 'This account is not a client.');
+            return back()->with('error', 'This account is not allowed to access the client area.');
+        }
+
+        if (Auth::user()->role === 'subaccount') {
+            $subaccount = ClientSubaccount::where('user_id', Auth::id())->first();
+            if ($subaccount) {
+                return redirect()->route('client.account.subaccounts.show', $subaccount);
+            }
         }
 
         return redirect()->route('client.dashboard');

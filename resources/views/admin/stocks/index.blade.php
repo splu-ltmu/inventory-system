@@ -248,8 +248,8 @@
         </div>
 
         <div style="display:flex; gap:8px; justify-content:flex-end;">
-            <button class="btn-ghost" type="button" onclick="closeAssignModal()">Cancel</button>
-            <button class="btn" type="button" onclick="saveAssignCategory()">Save</button>
+            <button class="btn-ghost" type="button" onclick="closeAssignModal()" style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db; padding:8px 16px; border-radius:6px; cursor:pointer;">Cancel</button>
+            <button class="btn" type="button" onclick="saveAssignCategory()" style="background:#3b82f6; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Save</button>
         </div>
     </div>
 </div>

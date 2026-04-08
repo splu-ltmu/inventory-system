@@ -34,6 +34,7 @@ use App\Http\Controllers\Client\ClientDashboardController;
 use App\Http\Controllers\Client\StockController as ClientStockController;
 use App\Http\Controllers\Client\ClientRequestController;
 use App\Http\Controllers\Client\AccountController;
+use App\Http\Controllers\Client\ClientSubaccountController;
 use App\Http\Controllers\Client\PasswordResetController as ClientPasswordResetController;
 
 /*
@@ -166,13 +167,16 @@ Route::prefix('admin')
 |--------------------------------------------------------------------------
 */
 Route::prefix('client')
-    ->middleware(['auth', 'role:client'])
+    ->middleware(['auth', 'role:client|subaccount'])
     ->group(function () {
 
         Route::get('/', [ClientDashboardController::class, 'index'])->name('client.dashboard');
 
         // Client summary/overview page
         Route::get('/summary', [ClientDashboardController::class, 'summary'])->name('client.summary');
+
+        // Client inventory page
+        Route::get('/inventory', [ClientDashboardController::class, 'inventory'])->name('client.inventory');
 
         Route::get('/stocks', [ClientStockController::class, 'index'])->name('client.stocks');
 
@@ -189,4 +193,9 @@ Route::prefix('client')
         Route::get('/account', [AccountController::class, 'index'])->name('client.account');
         Route::post('/account/email', [AccountController::class, 'updateEmail'])->name('client.account.updateEmail');
         Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('client.account.updatePassword');
+        Route::post('/account/distribute-to-subaccounts', [AccountController::class, 'distributeToSubaccounts'])->name('client.account.distributeToSubaccounts');
+        Route::post('/account/subaccounts', [ClientSubaccountController::class, 'store'])->name('client.account.subaccounts.store');
+        Route::get('/account/subaccounts/{subaccount}', [ClientSubaccountController::class, 'show'])->name('client.account.subaccounts.show');
+        Route::post('/account/subaccounts/{subaccount}/members', [ClientSubaccountController::class, 'storeMember'])->name('client.account.subaccounts.members.store');
+        Route::post('/account/subaccounts/{subaccount}/distributions', [ClientSubaccountController::class, 'storeDistribution'])->name('client.account.subaccounts.distributions.store');
     });

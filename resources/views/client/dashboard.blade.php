@@ -7,25 +7,43 @@
 @endphp
 
 @section('sidebar')
-    <a href="{{ route('client.dashboard') }}" class="{{ request()->is('client') ? 'active' : '' }}">
-        Dashboard <small>Home</small>
-    </a>
+    @if(auth()->user()->role === 'subaccount' && auth()->user()->subaccount)
+        <a href="{{ route('client.account.subaccounts.show', auth()->user()->subaccount) }}" class="{{ request()->is('client/account/subaccounts*') ? 'active' : '' }}">
+            Subaccount Details <small>My Subaccount · New</small>
+        </a>
 
-    <a href="{{ route('client.summary') }}" class="{{ request()->is('client/summary*') ? 'active' : '' }}">
-        Summary <small>Transactions</small>
-    </a>
+        <a href="{{ route('client.account') }}" class="{{ request()->is('client/account') ? 'active' : '' }}">
+            Account Settings <small>Email & Password · New</small>
+        </a>
+    @else
+        <a href="{{ route('client.dashboard') }}" class="{{ request()->is('client') ? 'active' : '' }}">
+            Dashboard <small>Home</small>
+        </a>
 
-    <a href="{{ route('client.stocks') }}" class="{{ request()->is('client/stocks*') ? 'active' : '' }}">
-        Available Stocks <small>Request items</small>
-    </a>
+        <a href="{{ route('client.summary') }}" class="{{ request()->is('client/summary*') ? 'active' : '' }}">
+            Summary <small>Transactions</small>
+        </a>
 
-    <a href="{{ route('client.requests') }}" class="{{ request()->is('client/requests*') ? 'active' : '' }}">
-        My Requests <small>Track status</small>
-    </a>
+        <a href="{{ route('client.inventory') }}" class="{{ request()->is('client/inventory*') ? 'active' : '' }}">
+            My Inventory <small>Received Items</small>
+        </a>
 
-    <a href="{{ route('client.account') }}" class="{{ request()->is('client/account*') ? 'active' : '' }}">
-        Account Settings <small>Email & Password</small>
-    </a>
+        <a href="{{ route('client.account') }}" class="{{ request()->is('client/account*') ? 'active' : '' }}">
+            Client Subaccounts <small>Create and manage subaccounts</small>
+        </a>
+
+        <a href="{{ route('client.stocks') }}" class="{{ request()->is('client/stocks*') ? 'active' : '' }}">
+            Available Stocks <small>Request items</small>
+        </a>
+
+        <a href="{{ route('client.requests') }}" class="{{ request()->is('client/requests*') ? 'active' : '' }}">
+            My Requests <small>Track status</small>
+        </a>
+
+        <a href="{{ route('client.account') }}" class="{{ request()->is('client/account*') ? 'active' : '' }}">
+            Account Settings <small>Email & Password</small>
+        </a>
+    @endif
 @endsection
 
 @section('content')

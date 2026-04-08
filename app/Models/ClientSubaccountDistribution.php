@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class ClientSubaccountDistribution extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'member_id',
+        'stock_request_item_id',
+        'distributed_qty',
+    ];
+
+    public function member()
+    {
+        return $this->belongsTo(ClientSubaccountMember::class, 'member_id');
+    }
+
+    public function stockRequestItem()
+    {
+        return $this->belongsTo(StockRequestItem::class, 'stock_request_item_id');
+    }
+}
