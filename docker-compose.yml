@@ -37,7 +37,7 @@ services:
     container_name: inventory-nginx
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8000}:80"
+      - "${APP_PORT:-8001}:80"
     volumes:
       - ./:/var/www
       - ./docker/nginx/conf.d:/etc/nginx/conf.d
