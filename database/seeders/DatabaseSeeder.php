@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'dev@allan.com',
             'password'   => Hash::make(env('ADMIN_PASSWORD', 'admin123')),
+            'role'=>'admin'
         ]);
     }
 }
