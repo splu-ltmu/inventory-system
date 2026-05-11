@@ -156,6 +156,26 @@
             width:100%;
             justify-content:center;
         }
+        
+        /* Position logout button at bottom for admin sidebar */
+        .sidebar:not(.client-sidebar){
+            display:flex;
+            flex-direction:column;
+        }
+        .sidebar:not(.client-sidebar) .nav{
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+            flex:1;
+            overflow:auto;
+            scrollbar-width:none;
+        }
+        .sidebar:not(.client-sidebar) .nav::-webkit-scrollbar{ display:none; }
+        .sidebar:not(.client-sidebar) .nav a.logout-link{
+            margin-top:auto;
+            width:100%;
+            justify-content:center;
+        }
     }
 
     /* MOBILE: better responsive spacing and full-width nav on small screens */
