@@ -884,7 +884,7 @@
     <aside class="sidebar <?php if(auth()->user()->role === 'client'): ?> client-sidebar <?php endif; ?>" id="sidebar">
         <div class="brand">
             <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px;">
-                <img src="/images/brand-logo.png" alt="Logo" style="width: 392px; height: 144px; object-fit: contain;">
+                <img src="/images/brand-logo.png" alt="Logo" style="height: 122; object-fit: contain;">
                 <div class="name" style="text-align: center;"><?php echo e($brand ?? 'Inventory System'); ?></div>
             </div>
             <div class="role" style="position: relative; text-align: center;">
