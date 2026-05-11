@@ -13,6 +13,7 @@ class ClientSubaccountAllocation extends Model
         'subaccount_id',
         'stock_request_item_id',
         'allocated_qty',
+        'used_qty',
     ];
 
     public function subaccount()
@@ -23,5 +24,17 @@ class ClientSubaccountAllocation extends Model
     public function stockRequestItem()
     {
         return $this->belongsTo(StockRequestItem::class, 'stock_request_item_id');
+    }
+
+    public function members()
+    {
+        return $this->hasManyThrough(
+            ClientSubaccountMember::class,
+            ClientSubaccountDistribution::class,
+            'stock_request_item_id', // foreign key on distributions
+            'id', // foreign key on members
+            'stock_request_item_id', // local key on allocations
+            'member_id' // local key on distributions
+        );
     }
 }

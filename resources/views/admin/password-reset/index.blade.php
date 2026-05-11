@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Password Reset';
-  $pageSubtitle = 'Manage client password reset requests.';
 @endphp
 
 @section('sidebar')
@@ -25,11 +24,11 @@
     }
     .btn-link:hover{ background: rgba(37,99,235,.18); }
 
-    .table-wrap{ overflow:auto; border:1px solid var(--line); border-radius:14px; }
-    table{ width:100%; border-collapse:collapse; min-width: 980px; background:#fff; }
-    th,td{ border:1px solid var(--line); padding:10px; text-align:left; }
-    th{ background: rgba(37,99,235,.06); color: var(--text); font-weight:700; }
-    td{ color: var(--text); }
+    .table-wrap{ overflow-x:auto; border-radius:16px; box-shadow:0 8px 25px rgba(59,130,246,0.15); background:linear-gradient(135deg, #eff6ff, #dbeafe); }
+    table{ width:100%; border-collapse:collapse; }
+    th,td{ border:1px solid #e0e7ff; padding:10px; text-align:left; }
+    th{ background:linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; font-weight:700; font-size:12px; border-bottom:2px solid #1e40af; }
+    td{ color: #475569; font-size:13px; border-bottom:1px solid #e0e7ff; }
     .muted{ color: var(--muted); }
 
     .status-badge{
@@ -117,34 +116,42 @@
         </thead>
         <tbody>
             @forelse($requests as $req)
-                <tr>
-                    <td>{{ $req->user->name ?? '—' }}</td>
-                    <td class="muted">{{ $req->user->email ?? '—' }}</td>
-                    <td>{{ $req->requested_at->format('M d, Y H:i') }}</td>
-                    <td>
-                        <span class="status-badge status-{{ $req->status }}">
-                            {{ ucfirst($req->status) }}
-                        </span>
+                <tr style="border-bottom:1px solid #e0e7ff; background:linear-gradient(135deg, #ffffff, #f8fafc);">
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
+                        <div style="font-weight:700; color:#1e40af; font-size:14px;">{{ $req->user->name ?? '—' }}</div>
                     </td>
-                    <td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#64748b; font-size:14px;">{{ $req->user->email ?? '—' }}</td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#475569; font-weight:600;">{{ $req->requested_at->format('M d, Y H:i') }}</td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
+                        @if($req->status === 'pending')
+                            <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #fed7aa; background:#fff7ed; color:#ea580c;">{{ ucfirst($req->status) }}</span>
+                        @elseif($req->status === 'sent')
+                            <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #bbf7d0; background:#ecfdf5; color:#059669;">{{ ucfirst($req->status) }}</span>
+                        @elseif($req->status === 'completed')
+                            <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #bbf7d0; background:#ecfdf5; color:#059669;">{{ ucfirst($req->status) }}</span>
+                        @elseif($req->status === 'rejected')
+                            <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #fecaca; background:#fef2f2; color:#dc2626;">{{ ucfirst($req->status) }}</span>
+                        @endif
+                    </td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
                         @if($req->status === 'pending')
                             <form method="POST" action="{{ route('password-reset.approve', $req->id) }}" style="display:inline;">
                                 @csrf
-                                <button type="submit" class="btn-action btn-approve">Approve</button>
+                                <button type="submit" class="btn-action btn-approve" style="padding:8px 16px; border-radius:8px; border:2px solid #3b82f6; background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:#ffffff; font-weight:700; transition:all 0.3s ease; box-shadow:0 4px 12px rgba(59,130,246,0.2);">Approve</button>
                             </form>
-                            <button type="button" onclick="showRejectModal({{ $req->id }})" class="btn-action btn-reject">Reject</button>
+                            <button type="button" onclick="showRejectModal({{ $req->id }})" class="btn-action btn-reject" style="padding:8px 16px; border-radius:8px; border:2px solid #ef4444; background:linear-gradient(135deg, #ef4444, #dc2626); color:#ffffff; font-weight:700; transition:all 0.3s ease; box-shadow:0 4px 12px rgba(239,68,68,0.2);">Reject</button>
                         @elseif($req->status === 'sent')
-                            <span style="color:var(--muted); font-size:12px;">Link sent</span>
+                            <span style="color:#64748b; font-size:14px;">Link sent</span>
                         @elseif($req->status === 'completed')
-                            <span style="color:var(--success); font-size:12px;">✓ Completed</span>
+                            <span style="color:#059669; font-size:14px; font-weight:600;">✓ Completed</span>
                         @elseif($req->status === 'rejected')
-                            <span style="color:var(--danger); font-size:12px;">✕ Rejected</span>
+                            <span style="color:#dc2626; font-size:14px; font-weight:600;">✕ Rejected</span>
                         @endif
                     </td>
                 </tr>
             @empty
-                <tr>
-                    <td colspan="4" style="color:var(--muted);">No password reset requests.</td>
+                <tr style="background:linear-gradient(135deg, #f8fafc, #f1f5f9);">
+                    <td colspan="4" style="padding:20px 10px; text-align:center; color:#64748b; font-size:14px;">No password reset requests.</td>
                 </tr>
             @endforelse
         </tbody>

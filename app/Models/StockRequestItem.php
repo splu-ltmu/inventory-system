@@ -15,6 +15,7 @@ class StockRequestItem extends Model
         'requested_qty',
         'approved_qty',
         'distributed_qty',
+        'rejection_reason',
         // 'status', // ✅ keep ONLY if this column exists in your table
     ];
 

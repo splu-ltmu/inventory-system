@@ -36,10 +36,36 @@ class StockController extends Controller
             'hidden' => 'boolean'
         ]);
 
-        Stock::create($request->all());
+        Stock::create($request->only(['category_id','id_no','description','unit','stock','hidden']));
+
+        // Check if request is AJAX (from modal)
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => 'Stock added successfully.'
+            ]);
+        }
 
         return redirect()->route('stocks.index')
             ->with('success', 'Stock added.');
+    }
+
+    // Update an existing stock item
+    public function update(Request $request, Stock $stock)
+    {
+        $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'id_no' => 'required|string|unique:stocks,id_no,' . $stock->id,
+            'description' => 'required|string',
+            'unit' => 'required|string',
+            'total' => 'required|integer|min:0',
+            'stock' => 'required|integer|min:0',
+            'hidden' => 'boolean'
+        ]);
+
+        $stock->update($request->only(['category_id','id_no','description','unit','total','stock','hidden']));
+
+        return redirect()->route('stocks.index')
+            ->with('success', 'Stock updated.');
     }
 
     // Generate next stock ID based on category
@@ -115,6 +141,25 @@ class StockController extends Controller
             'category_name' => $unknown->name,
             'stock_description' => $stock->description,
             'stock_id_no' => $stock->id_no,
+        ]);
+    }
+
+    // Edit stock via modal (AJAX)
+    public function editModal(Request $request, Stock $stock)
+    {
+        \Log::info('Edit modal called', $request->all());
+
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'unit' => 'required|string|max:255',
+            'category_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $stock->update($request->only(['description', 'unit', 'category_id']));
+
+        return response()->json([
+            'success' => true,
+            'stock' => $stock->load('category'),
         ]);
     }
 

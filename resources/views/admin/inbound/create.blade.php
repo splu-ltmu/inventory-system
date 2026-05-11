@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Inbound';
-  $pageSubtitle = 'Add new inbound item.';
 @endphp
 
 @section('sidebar')

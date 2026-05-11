@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Admin Panel';
-  $pageSubtitle = 'Manage categories, stocks, inbound/outbound, and requests.';
 @endphp
 
 @section('sidebar')
@@ -11,7 +10,7 @@
 @endsection
 
 @section('content')
-    <h2 style="margin:0 0 10px;">Welcome, {{ auth()->user()->name }} 👋</h2>
+    <h2 style="margin:0 0 10px;">Welcome, {{ auth()->user()->name }}</h2>
 
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:12px; margin-top:14px;">
         <div style="padding:14px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.02);">
@@ -48,96 +47,194 @@
     </div>
 
     <style>
-        /* Charts grid: 50/50 default; when expanded the clicked card spans full width and the other stacks below */
+        /* Enhanced charts grid: 3 columns for better layout */
         .charts-grid{
             margin-top:32px;
             display:grid;
-            grid-template-columns: 1fr 1fr;
-            gap:16px;
+            grid-template-columns: repeat(3, 1fr);
+            gap:20px;
             align-items:start;
         }
-        .chart-card{
-            padding:18px;
-            border:1px solid rgba(255,255,255,.08);
-            border-radius:14px;
-            background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-            transition:transform .18s ease, box-shadow .18s ease;
-            cursor:pointer;
-        }
-        .chart-card:hover{ transform: translateY(-4px); box-shadow:0 18px 40px rgba(2,6,23,0.06); }
-
-        .chart-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
-        .chart-title{ font-weight:800; color:#000; margin:0; }
-        .chart-sub{ color:#000; font-size:13px; margin:0; }
-
+        @media (max-width:1200px){ .charts-grid{ grid-template-columns: 1fr 1fr; } }
         @media (max-width:900px){ .charts-grid{ grid-template-columns: 1fr; } }
+        
+        .chart-card{
+            padding:20px;
+            border:1px solid rgba(255,255,255,.08);
+            border-radius:16px;
+            background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            transition:transform .2s ease, box-shadow .2s ease;
+            cursor:pointer;
+            position:relative;
+            overflow:hidden;
+        }
+        .chart-card:hover{ 
+            transform: translateY(-6px); 
+            box-shadow:0 20px 40px rgba(59,130,246,0.15); 
+            border-color: rgba(59,130,246,0.3);
+        }
+        .chart-card::before{
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            height:3px;
+            background:linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+
+        .chart-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+        .chart-title{ font-weight:800; color:#000; margin:0; font-size:18px; }
+        .chart-sub{ color:#9ca3af; font-size:13px; margin:0; }
+        .chart-icon{ font-size:24px; opacity:0.8; }
 
         /* fullscreen modal for charts */
         .chart-modal{
             position:fixed;
             top:0; left:0; width:100vw; height:100vh;
-            background:rgba(0,0,0,0.45);
-            backdrop-filter: blur(6px);
+            background:rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
             display:flex;
             align-items:center;
             justify-content:center;
-            padding:10px;
+            padding:20px;
             z-index:1000;
             overflow:auto;
         }
         .chart-modal.hidden{ display:none; }
         .chart-modal .modal-content{
             position:relative;
-            width:90vw;
-            max-width:1200px;
+            width:95vw;
+            max-width:1400px;
             max-height:90vh;
             background:#fff;
-            border-radius:8px;
-            padding:12px;
-            box-shadow:0 8px 24px rgba(0,0,0,.2);
+            border-radius:16px;
+            padding:24px;
+            box-shadow:0 25px 50px rgba(0,0,0,.3);
             overflow:auto;
         }
         .chart-modal .modal-content canvas{
             width:100% !important;
-            /* reduce height to avoid overflowing tall screens */
-            height:60vh !important;
+            height:70vh !important;
         }
         .chart-modal .close-btn{
             position:absolute;
-            top:12px;
-            right:12px;
-            background:#fff;
+            top:16px;
+            right:16px;
+            background:#f3f4f6;
             border:none;
             border-radius:50%;
-            width:32px;
-            height:32px;
-            font-size:18px;
+            width:40px;
+            height:40px;
+            font-size:20px;
             line-height:0;
             cursor:pointer;
+            transition:all 0.2s ease;
         }
-    
+        .chart-modal .close-btn:hover{
+            background:#e5e7eb;
+            transform:scale(1.1);
+        }
+
+        /* Loading spinner styles */
+        .chart-loading-overlay{
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(255,255,255,0.9);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:10;
+            border-radius:16px;
+            opacity:0;
+            visibility:hidden;
+            transition:opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .chart-loading-overlay.active{
+            opacity:1;
+            visibility:visible;
+        }
+        .spinner{
+            width:40px;
+            height:40px;
+            border:4px solid #f3f4f6;
+            border-top:4px solid #3b82f6;
+            border-radius:50%;
+            animation:spin 1s linear infinite;
+        }
+        @keyframes spin{
+            0%{ transform:rotate(0deg); }
+            100%{ transform:rotate(360deg); }
+        }
+        .loading-text{
+            position:absolute;
+            bottom:20px;
+            left:50%;
+            transform:translateX(-50%);
+            color:#6b7280;
+            font-size:14px;
+            font-weight:500;
+        }
     </style>
 
     <div class="charts-grid" id="chartsGrid">
+        <!-- Category Analytics Chart -->
         <div class="chart-card" id="categoryCard">
             <div class="chart-header">
                 <div>
                     <h3 class="chart-title">Category Analytics</h3>
-                    <div class="chart-sub">Total availability vs. approved requests by category</div>
+                    <div class="chart-sub">Stock availability vs. approved requests by category</div>
+                </div>
+                <div class="chart-icon">📊</div>
+            </div>
+            <div style="position:relative; height:320px;">
+                <canvas id="categoryChart"></canvas>
+                <div class="chart-loading-overlay" id="categoryLoading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Loading data...</div>
                 </div>
             </div>
-            <div style="position:relative; height:360px;"><canvas id="categoryChart"></canvas></div>
         </div>
 
+        <!-- Requests by Office Chart -->
         <div class="chart-card" id="officeCard">
             <div class="chart-header">
                 <div>
                     <h3 class="chart-title">Requests by Office</h3>
                     <div class="chart-sub">Which offices submit the most requests</div>
                 </div>
+                <div class="chart-icon">🏢</div>
             </div>
-            <div style="position:relative; height:300px; width:100%; max-width:600px;"><canvas id="officeChart"></canvas></div>
-            <div id="officeTop" style="margin-top:12px; color:#9ca3af; font-size:13px;"></div>
+            <div style="position:relative; height:320px; width:100%;">
+                <canvas id="officeChart"></canvas>
+                <div class="chart-loading-overlay" id="officeLoading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Loading data...</div>
+                </div>
+            </div>
+            <div id="officeTop" style="margin-top:12px; color:#9ca3af; font-size:13px; text-align:center;"></div>
+        </div>
+
+        <!-- Most Requested Items Chart -->
+        <div class="chart-card" id="itemsCard">
+            <div class="chart-header">
+                <div>
+                    <h3 class="chart-title">Most Requested Items</h3>
+                    <div class="chart-sub">Top 10 most requested inventory items</div>
+                </div>
+                <div class="chart-icon">🔥</div>
+            </div>
+            <div style="position:relative; height:320px; width:100%;">
+                <canvas id="itemsChart"></canvas>
+                <div class="chart-loading-overlay" id="itemsLoading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Loading data...</div>
+                </div>
+            </div>
+            <div id="itemsTop" style="margin-top:12px; color:#9ca3af; font-size:13px; text-align:center;"></div>
         </div>
     </div>
 
@@ -145,19 +242,20 @@
     <div id="chartModal" class="chart-modal hidden">
         <div class="modal-content">
             <button id="closeModal" class="close-btn">&times;</button>
-            <!-- month filter will appear here when a chart is zoomed -->
-            <div id="modalControls" style="margin-bottom:12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
-                <label for="monthFilter" style="margin:0; font-size:14px; color:#333;">Month:</label>
-                <select id="monthFilter" style="padding:4px 6px; font-size:14px; min-width:120px;">
-                    <!-- options populated by script -->
-                </select>
+            <div id="modalControls" style="margin-bottom:16px; display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding-bottom:16px; border-bottom:1px solid #e5e7eb;">
+                <label for="startDateModal" style="margin:0; font-size:14px; color:#374151; font-weight:600;">Start Date:</label>
+                <input type="date" id="startDateModal" style="padding:6px 10px; font-size:14px; border:1px solid #d1d5db; border-radius:6px; min-width:140px;">
+                <label for="endDateModal" style="margin:0; font-size:14px; color:#374151; font-weight:600;">End Date:</label>
+                <input type="date" id="endDateModal" style="padding:6px 10px; font-size:14px; border:1px solid #d1d5db; border-radius:6px; min-width:140px;">
+                <button id="applyModalFilter" style="padding:8px 16px; border:1px solid #3b82f6; border-radius:6px; background:#3b82f6; color:#fff; font-size:14px; font-weight:600; cursor:pointer;">Apply</button>
+                <button id="resetModalFilter" style="padding:8px 16px; border:1px solid #6b7280; border-radius:6px; background:#f3f4f6; color:#374151; font-size:14px; font-weight:600; cursor:pointer;">Reset</button>
             </div>
             <div id="modalMessage" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
-                    font-size:18px; color:#333; text-align:center; pointer-events:none;">
-                No data for selected month
+                    font-size:18px; color:#6b7280; text-align:center; pointer-events:none;">
+                No data for selected date range
             </div>
             <div id="modalChartWrapper" style="overflow-x:auto;">
-                <canvas id="modalChart" style="width:100%; height:80vh;"></canvas>
+                <canvas id="modalChart" style="width:100%; height:70vh;"></canvas>
             </div>
         </div>
     </div>
@@ -166,95 +264,355 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const chartsGrid = document.getElementById('chartsGrid');
-
-            // --- Chart: Category (bar) — keep data, make visuals punchy (gradients, rounded bars) ---
+            
+            // Set default date range for modal (last 30 days)
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            // --- Enhanced Category Chart ---
             const catCtx = document.getElementById('categoryChart').getContext('2d');
             const categories = @json($categoryAnalytics);
             const catLabels = categories.map(c => c.name);
             const catAvailability = categories.map(c => c.availability);
             const catRequested = categories.map(c => c.requested);
 
-            // create gradients
+            // Enhanced gradients
             const gAvail = catCtx.createLinearGradient(0,0,0,300);
-            gAvail.addColorStop(0, 'rgba(34,197,94,0.95)');
-            gAvail.addColorStop(1, 'rgba(34,197,94,0.55)');
+            gAvail.addColorStop(0, 'rgba(34,197,94,0.6)');
+            gAvail.addColorStop(0.5, 'rgba(34,197,94,0.4)');
+            gAvail.addColorStop(1, 'rgba(34,197,94,0.3)');
             const gReq = catCtx.createLinearGradient(0,0,0,300);
-            gReq.addColorStop(0, 'rgba(59,130,246,0.95)');
-            gReq.addColorStop(1, 'rgba(59,130,246,0.45)');
+            gReq.addColorStop(0, 'rgba(59,130,246,0.6)');
+            gReq.addColorStop(0.5, 'rgba(59,130,246,0.4)');
+            gReq.addColorStop(1, 'rgba(59,130,246,0.3)');
 
             const catChart = new Chart(catCtx, {
                 type: 'bar',
                 data: {
                     labels: catLabels,
                     datasets: [
-                        { label: 'Available', data: catAvailability, backgroundColor: gAvail, borderColor: 'rgba(34,197,94,1)', borderWidth: 0, borderRadius: 8, borderSkipped: false },
-                        { label: 'Outbound/Approved Request', data: catRequested, backgroundColor: gReq, borderColor: 'rgba(59,130,246,1)', borderWidth: 0, borderRadius: 8, borderSkipped: false }
+                        { 
+                            label: 'Available Stock', 
+                            data: catAvailability, 
+                            backgroundColor: gAvail, 
+                            borderColor: 'rgba(34,197,94,1)', 
+                            borderWidth: 2, 
+                            borderRadius: 8, 
+                            borderSkipped: false,
+                            barPercentage: 0.8
+                        },
+                        { 
+                            label: 'Approved Requests', 
+                            data: catRequested, 
+                            backgroundColor: gReq, 
+                            borderColor: 'rgba(59,130,246,1)', 
+                            borderWidth: 2, 
+                            borderRadius: 8, 
+                            borderSkipped: false,
+                            barPercentage: 0.8
+                        }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 900, easing: 'easeOutQuart' },
-                    plugins: { legend: { labels: { color: '#000' } } },
+                    animation: { duration: 1200, easing: 'easeOutQuart' },
+                    plugins: { 
+                        legend: { 
+                            labels: { 
+                                color: '#000',
+                                font: { size: 12, weight: '600' },
+                                padding: 15
+                            } 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 12
+                        }
+                    },
                     scales: {
-                        y: { beginAtZero:true, ticks:{ color:'#000' }, grid:{ color:'rgba(0,0,0,.06)' } },
-                        x: { ticks:{ color:'#000' }, grid:{ display:false } }
+                        y: { 
+                            beginAtZero:true, 
+                            ticks:{ color:'#000', font: { size: 11 } }, 
+                            grid:{ color:'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: 'Quantity',
+                                color: '#000',
+                                font: { size: 12, weight: '600' }
+                            }
+                        },
+                        x: { 
+                            ticks:{ color:'#000', font: { size: 11 } }, 
+                            grid:{ display: false },
+                            title: {
+                                display: true,
+                                text: 'Categories',
+                                color: '#000',
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
                     },
                     interaction: { intersect: false, mode: 'index' }
                 }
             });
 
-            // --- Chart: Office (horizontal bar) ---
+            // --- Enhanced Office Chart ---
             const officeCtx = document.getElementById('officeChart').getContext('2d');
             const offices = @json($officeAnalytics);
             const officeLabels = offices.map(o => o.office);
             const officeCounts = offices.map(o => o.count);
 
-            // make first bar orange, others blue; use rounded bars
+            // Dynamic color gradients
             const officeGradients = officeCounts.map((v,i) => {
                 const g = officeCtx.createLinearGradient(0,0,300,0);
-                if(i===0){ g.addColorStop(0,'rgba(249,115,22,0.95)'); g.addColorStop(1,'rgba(249,115,22,0.55)'); }
-                else { g.addColorStop(0,'rgba(59,130,246,0.9)'); g.addColorStop(1,'rgba(59,130,246,0.5)'); }
+                if(i===0){ 
+                    g.addColorStop(0,'rgba(249,115,22,0.6)'); 
+                    g.addColorStop(0.5,'rgba(249,115,22,0.4)'); 
+                    g.addColorStop(1,'rgba(249,115,22,0.3)'); 
+                }
+                else if(i===1){ 
+                    g.addColorStop(0,'rgba(168,85,247,0.6)'); 
+                    g.addColorStop(0.5,'rgba(168,85,247,0.4)'); 
+                    g.addColorStop(1,'rgba(168,85,247,0.3)'); 
+                }
+                else { 
+                    g.addColorStop(0,'rgba(59,130,246,0.5)'); 
+                    g.addColorStop(0.5,'rgba(59,130,246,0.4)'); 
+                    g.addColorStop(1,'rgba(59,130,246,0.3)'); 
+                }
                 return g;
             });
 
             const officeChart = new Chart(officeCtx, {
                 type: 'bar',
-                data: { labels: officeLabels, datasets: [{ label: 'Requests', data: officeCounts, backgroundColor: officeGradients, borderRadius: 8, borderSkipped: false }] },
+                data: { 
+                    labels: officeLabels, 
+                    datasets: [{ 
+                        label: 'Requests', 
+                        data: officeCounts, 
+                        backgroundColor: officeGradients, 
+                        borderRadius: 8, 
+                        borderSkipped: false,
+                        barPercentage: 0.7
+                    }] 
+                },
                 options: {
-                    indexAxis: 'y', responsive:true, maintainAspectRatio:false,
-                    animation:{ duration:800, easing:'easeOutQuart' },
-                    plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ctx.parsed.x + ' requests' } } },
+                    indexAxis: 'y', 
+                    responsive:true, 
+                    maintainAspectRatio:false,
+                    animation:{ duration:1000, easing:'easeOutQuart' },
+                    plugins:{ 
+                        legend:{ display:false }, 
+                        tooltip:{ 
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 12,
+                            callbacks:{ 
+                                label: ctx => ctx.parsed.x + ' requests' 
+                            } 
+                        } 
+                    },
                     scales:{
                         x:{
                             beginAtZero:true,
-                            ticks:{
-                                color:'#000',
-                                precision:0,
-                                stepSize:1
-                            },
-                            grid:{ color:'rgba(0,0,0,.06)' }
+                            ticks:{ color:'#000', font: { size: 11 } },
+                            grid:{ color:'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: 'Number of Requests',
+                                color: '#000',
+                                font: { size: 12, weight: '600' }
+                            }
                         },
-                        y:{ ticks:{ color:'#000' }, grid:{ display:false } }
+                        y:{ 
+                            ticks:{ color:'#000', font: { size: 11 } },
+                            grid:{ display: false },
+                            title: {
+                                display: true,
+                                text: 'Offices',
+                                color: '#000',
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
                     }
                 }
             });
 
-            // show top office summary (office name only)
-            const top = offices[0];
-            const topEl = document.getElementById('officeTop');
-            if(top && topEl){ topEl.innerHTML = `<strong style="color:#fff;">Top: ${top.office}</strong>`; }
+            // --- Most Requested Items Chart ---
+            const itemsCtx = document.getElementById('itemsChart').getContext('2d');
+            const items = @json($itemAnalytics);
+            const itemLabels = items.map(i => i.id_no + ' - ' + (i.description.length > 20 ? i.description.substring(0,20) + '...' : i.description));
+            const itemCounts = items.map(i => i.total_requested);
 
-            // simple resize handler (no expand/collapse behavior)
-            function resizeCharts(){
-                try{ if(catChart && typeof catChart.resize === 'function') catChart.resize(); if(catChart && typeof catChart.update === 'function') catChart.update(); }catch(e){}
-                try{ if(officeChart && typeof officeChart.resize === 'function') officeChart.resize(); if(officeChart && typeof officeChart.update === 'function') officeChart.update(); }catch(e){}
+            // Enhanced gradients for items
+            const itemGradients = itemCounts.map((v,i) => {
+                const g = itemsCtx.createLinearGradient(0,0,0,300);
+                const hue = (i * 360 / itemCounts.length) % 360;
+                g.addColorStop(0, `hsla(${hue}, 70%, 60%, 0.6)`);
+                g.addColorStop(0.5, `hsla(${hue}, 70%, 60%, 0.4)`);
+                g.addColorStop(1, `hsla(${hue}, 70%, 60%, 0.3)`);
+                return g;
+            });
+
+            const itemsChart = new Chart(itemsCtx, {
+                type: 'bar',
+                data: {
+                    labels: itemLabels,
+                    datasets: [{
+                        label: 'Times Requested',
+                        data: itemCounts,
+                        backgroundColor: itemGradients,
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 1100, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 12,
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    const item = items[index];
+                                    return `${item.id_no} - ${item.description}`;
+                                },
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const item = items[index];
+                                    return [
+                                        `Requested: ${context.parsed.y} times`,
+                                        `Category: ${item.category}`,
+                                        `Unit: ${item.unit}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#000', font: { size: 11 } },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            title: {
+                                display: true,
+                                text: 'Times Requested',
+                                color: '#000',
+                                font: { size: 12, weight: '600' }
+                            }
+                        },
+                        x: {
+                            ticks: { color: '#000', font: { size: 10 }, maxRotation: 45, minRotation: 45 },
+                            grid: { display: false },
+                            title: {
+                                display: true,
+                                text: 'Items (ID - Description)',
+                                color: '#000',
+                                font: { size: 12, weight: '600' }
+                            }
+                        }
+                    },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+
+            // Show top items summary
+            const topItem = items[0];
+            const topEl = document.getElementById('itemsTop');
+            if(topItem && topEl){ 
+                topEl.innerHTML = `<strong style="color:#000;">Top: ${topItem.id_no} - ${topItem.description}</strong><br><span style="color:#9ca3af; font-size:11px;">Requested ${topItem.total_requested} times</span>`; 
             }
 
-            // reflow charts on window resize
-            window.addEventListener('resize', function(){ resizeCharts(); });
+            // Show top office summary
+            const topOffice = offices[0];
+            const topOfficeEl = document.getElementById('officeTop');
+            if(topOffice && topOfficeEl){ 
+                topOfficeEl.innerHTML = `<strong style="color:#000;">Top: ${topOffice.office}</strong><br><span style="color:#9ca3af; font-size:11px;">${topOffice.count} requests</span>`; 
+            }
 
-            // ----- fullscreen modal functionality (config cloning) -----
+            // --- Filter functionality (only for modal) ---
+            function updateChartsWithFilter(startDate, endDate) {
+                // Show loading overlays
+                showLoadingStates();
+                
+                const url = '/admin/dashboard/chart-data' + '?start_date=' + encodeURIComponent(startDate) + '&end_date=' + encodeURIComponent(endDate);
+                
+                fetch(url)
+                    .then(resp => resp.json())
+                    .then(data => {
+                        // Update category chart
+                        catChart.data.labels = data.categories.map(c => c.name);
+                        catChart.data.datasets[0].data = data.categories.map(c => c.availability);
+                        catChart.data.datasets[1].data = data.categories.map(c => c.requested);
+                        catChart.update('active');
+
+                        // Update office chart
+                        officeChart.data.labels = data.offices.map(o => o.office);
+                        officeChart.data.datasets[0].data = data.offices.map(o => o.count);
+                        officeChart.update('active');
+
+                        // Update items chart
+                        itemsChart.data.labels = data.items.map(i => i.id_no + ' - ' + (i.description.length > 20 ? i.description.substring(0,20) + '...' : i.description));
+                        itemsChart.data.datasets[0].data = data.items.map(i => i.total_requested);
+                        itemsChart.update('active');
+
+                        // Update summaries
+                        if(data.items.length > 0) {
+                            const newTopItem = data.items[0];
+                            topEl.innerHTML = `<strong style="color:#000;">Top: ${newTopItem.id_no} - ${newTopItem.description}</strong><br><span style="color:#9ca3af; font-size:11px;">Requested ${newTopItem.total_requested} times</span>`;
+                        }
+                        if(data.offices.length > 0) {
+                            const newTopOffice = data.offices[0];
+                            topOfficeEl.innerHTML = `<strong style="color:#000;">Top: ${newTopOffice.office}</strong><br><span style="color:#9ca3af; font-size:11px;">${newTopOffice.count} requests</span>`;
+                        }
+                        
+                        // Hide loading overlays
+                        hideLoadingStates();
+                    })
+                    .catch(error => {
+                        console.error('Error updating charts:', error);
+                        hideLoadingStates();
+                    });
+            }
+
+            // Loading state management functions
+            function showLoadingStates() {
+                document.getElementById('categoryLoading').classList.add('active');
+                document.getElementById('officeLoading').classList.add('active');
+                document.getElementById('itemsLoading').classList.add('active');
+            }
+
+            function hideLoadingStates() {
+                document.getElementById('categoryLoading').classList.remove('active');
+                document.getElementById('officeLoading').classList.remove('active');
+                document.getElementById('itemsLoading').classList.remove('active');
+            }
+
+            // --- Modal functionality ---
             let modalChartInstance = null;
             const modal = document.getElementById('chartModal');
             const modalCanvas = document.getElementById('modalChart');
@@ -266,7 +624,6 @@
                     data: {
                         labels: Array.isArray(src.config.data.labels) ? [...src.config.data.labels] : src.config.data.labels,
                         datasets: src.config.data.datasets.map(ds => {
-                            // shallow copy dataset; preserve gradient/background references
                             const copy = { ...ds };
                             if(Array.isArray(ds.data)) copy.data = [...ds.data];
                             return copy;
@@ -274,42 +631,27 @@
                     },
                     options: src.config.options ? { ...src.config.options } : {}
                 };
-                // plugins may have callbacks; copy by reference
                 if(src.config.plugins) cfg.plugins = { ...src.config.plugins };
                 return cfg;
             }
 
-            // keep track of which chart is currently displayed in the modal
             let currentChartType = null;
             let originalChartForModal = null;
 
             function openChartFullscreen(chart, type) {
                 if(modalChartInstance) return;
-
                 currentChartType = type;
                 originalChartForModal = chart;
-
-                // populate month selector and set default to current month
-                const monthSelect = document.getElementById('monthFilter');
-                if(monthSelect){
-                    populateMonthOptions(monthSelect);
-                    // start with no selection; user must choose month manually
-                    monthSelect.value = '';
-                    monthSelect.onchange = function(){ loadChartData(this.value); };
-                }
-
-                // show initial instruction message
-                const msg = document.getElementById('modalMessage');
-                if(msg){
-                    msg.textContent = 'Please select a month';
-                    msg.style.display = 'block';
-                }
-
-                // lock scroll on background page
+                
+                // Set modal date inputs to default range
+                document.getElementById('startDateModal').value = thirtyDaysAgo.toISOString().split('T')[0];
+                document.getElementById('endDateModal').value = today.toISOString().split('T')[0];
                 document.body.style.overflow = 'hidden';
-
                 modal.classList.remove('hidden');
                 window.addEventListener('resize', handleModalResize);
+                
+                // Only load data if user has actually selected a date range
+                // Don't auto-load with default dates to avoid showing data when user hasn't selected anything
             }
 
             function closeModal() {
@@ -321,7 +663,6 @@
                 originalChartForModal = null;
                 modal.classList.add('hidden');
                 window.removeEventListener('resize', handleModalResize);
-                // restore body scrolling
                 document.body.style.overflow = '';
             }
 
@@ -331,58 +672,39 @@
                 }
             }
 
-            // generate the last 12 months options for the selector
-            function populateMonthOptions(select) {
-                select.innerHTML = '';
-                // add blank placeholder
-                const placeholder = document.createElement('option');
-                placeholder.value = '';
-                placeholder.textContent = '-- select month --';
-                select.appendChild(placeholder);
-                const now = new Date();
-                for(let i=0;i<12;i++){
-                    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-                    const val = d.toISOString().slice(0,7);
-                    const label = d.toLocaleString('default', { month:'long', year:'numeric' });
-                    const opt = document.createElement('option');
-                    opt.value = val;
-                    opt.textContent = label;
-                    select.appendChild(opt);
-                }
-            }
-
-            // request analytics data from the server for a particular month and redraw modal chart
-            function loadChartData(month) {
-                const messageEl = document.getElementById('modalMessage');
-                // if user cleared selection or hasn't chosen yet
-                if(!month) {
-                    if(messageEl) {
-                        messageEl.textContent = 'Please select a month';
-                        messageEl.style.display = 'block';
-                    }
-                    if(modalChartInstance) {
-                        modalChartInstance.destroy();
-                        modalChartInstance = null;
+            function loadModalChartData(startDate, endDate) {
+                if(!startDate || !endDate) {
+                    const msg = document.getElementById('modalMessage');
+                    if(msg) {
+                        msg.textContent = 'Please select both start and end dates';
+                        msg.style.display = 'block';
                     }
                     return;
                 }
 
-                if(messageEl) {
-                    messageEl.style.display = 'none';
+                // Show loading state in modal
+                const msg = document.getElementById('modalMessage');
+                if(msg) {
+                    msg.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; gap:10px;"><div class="spinner" style="width:30px; height:30px; border-width:3px;"></div><div>Loading chart data...</div></div>';
+                    msg.style.display = 'block';
                 }
 
-                const url = '/admin/dashboard/chart-data' + '?month=' + encodeURIComponent(month);
+                const url = '/admin/dashboard/chart-data' + '?start_date=' + encodeURIComponent(startDate) + '&end_date=' + encodeURIComponent(endDate);
                 fetch(url)
                     .then(resp => resp.json())
                     .then(data => {
-                        if(!originalChartForModal) return;
                         rebuildModalChart(originalChartForModal, data);
                     })
-                    .catch(console.error);
+                    .catch(error => {
+                        console.error('Error loading modal chart:', error);
+                        if(msg) {
+                            msg.textContent = 'Error loading chart data';
+                            msg.style.display = 'block';
+                        }
+                    });
             }
 
             function rebuildModalChart(sourceChart, data) {
-                // clear existing modal chart instance if any
                 if(modalChartInstance) {
                     modalChartInstance.destroy();
                     modalChartInstance = null;
@@ -390,22 +712,19 @@
 
                 const messageEl = document.getElementById('modalMessage');
 
-                // determine whether any request-related data exists for this month
-                let hasRequestData = false;
+                // Check if we have data
+                let hasData = false;
                 if(currentChartType === 'category') {
-                    if(Array.isArray(data.categories)) {
-                        hasRequestData = data.categories.some(c => (c.requested || 0) > 0);
-                    }
+                    hasData = data.categories && data.categories.length > 0;
                 } else if(currentChartType === 'office') {
-                    if(Array.isArray(data.offices)) {
-                        hasRequestData = data.offices.some(o => (o.count || 0) > 0);
-                    }
+                    hasData = data.offices && data.offices.length > 0;
+                } else if(currentChartType === 'items') {
+                    hasData = data.items && data.items.length > 0;
                 }
 
-                if(!hasRequestData) {
-                    // no relevant monthly data – show a clear message and clear canvas
+                if(!hasData) {
                     if(messageEl){
-                        messageEl.textContent = 'No data for this month';
+                        messageEl.textContent = 'No data for selected date range';
                         messageEl.style.display = 'block';
                     }
                     const ctx = modalCanvas.getContext('2d');
@@ -413,12 +732,11 @@
                     return;
                 }
 
-                // hide message if it was shown
                 if(messageEl) messageEl.style.display = 'none';
 
-                // build config normally when there is data
                 const cfg = cloneChartConfig(sourceChart);
                 let labelsCount = 0;
+                
                 if(currentChartType === 'category') {
                     cfg.data.labels = data.categories.map(c=>c.name);
                     cfg.data.datasets[0].data = data.categories.map(c=>c.availability);
@@ -428,13 +746,16 @@
                     cfg.data.labels = data.offices.map(o=>o.office);
                     cfg.data.datasets[0].data = data.offices.map(o=>o.count);
                     labelsCount = data.offices.length;
+                } else if(currentChartType === 'items') {
+                    cfg.data.labels = data.items.map(i => i.id_no + ' - ' + (i.description.length > 30 ? i.description.substring(0,30) + '...' : i.description));
+                    cfg.data.datasets[0].data = data.items.map(i => i.total_requested);
+                    labelsCount = data.items.length;
                 }
 
-                // if there are many labels, expand canvas width to allow horizontal scroll
                 const wrapper = document.getElementById('modalChartWrapper');
                 if(wrapper && modalCanvas) {
                     const minWidth = wrapper.clientWidth;
-                    const extra = labelsCount * 60; // ~60px per label
+                    const extra = labelsCount * 80;
                     modalCanvas.style.width = Math.max(minWidth, extra) + 'px';
                     wrapper.scrollLeft = 0;
                 }
@@ -443,16 +764,28 @@
                 modalChartInstance.resize();
             }
 
-            function handleModalResize(){
-                if(modalChartInstance){
-                    try{ modalChartInstance.resize(); }catch(e){}
-                }
-            }
+            // Modal filter controls
+            document.getElementById('applyModalFilter').addEventListener('click', function() {
+                const startDate = document.getElementById('startDateModal').value;
+                const endDate = document.getElementById('endDateModal').value;
+                loadModalChartData(startDate, endDate);
+            });
+
+            document.getElementById('resetModalFilter').addEventListener('click', function() {
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+                document.getElementById('startDateModal').value = thirtyDaysAgo.toISOString().split('T')[0];
+                document.getElementById('endDateModal').value = today.toISOString().split('T')[0];
+                loadModalChartData(
+                    thirtyDaysAgo.toISOString().split('T')[0],
+                    today.toISOString().split('T')[0]
+                );
+            });
 
             closeBtn.addEventListener('click', closeModal);
             modal.addEventListener('click', function(e){ if(e.target === modal) closeModal(); });
 
-            // helper to enable clicking anywhere inside card (including canvas)
+            // Make charts clickable
             function makeClickable(card, chart, type) {
                 card.style.cursor = 'pointer';
                 card.addEventListener('click', function(){ openChartFullscreen(chart, type); });
@@ -462,6 +795,7 @@
 
             makeClickable(document.getElementById('categoryCard'), catChart, 'category');
             makeClickable(document.getElementById('officeCard'), officeChart, 'office');
+            makeClickable(document.getElementById('itemsCard'), itemsChart, 'items');
         });
     </script>
 @endsection

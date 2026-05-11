@@ -17,7 +17,7 @@ class RequestController extends Controller
     {
         $q = trim((string)$request->query('q', ''));
 
-        $requestsQuery = StockRequest::with(['client', 'items.stock']);
+        $requestsQuery = StockRequest::with(['client', 'member', 'items.stock']);
 
         if ($q !== '') {
             // allow searching by ref no (id) or client name
@@ -138,8 +138,10 @@ class RequestController extends Controller
         }
 
         $data = $request->validate([
-            'approved_qty'   => ['required', 'array'],
-            'approved_qty.*' => ['nullable', 'integer', 'min:0'],
+            'approved_qty'      => ['required', 'array'],
+            'approved_qty.*'     => ['nullable', 'integer', 'min:0'],
+            'rejection_reason'   => ['nullable', 'array'],
+            'rejection_reason.*' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $hasApproved = false;
@@ -161,9 +163,12 @@ class RequestController extends Controller
 
                 if ($approved > 0) {
                     $item->status = 'approved';
+                    $item->rejection_reason = null;
                     $hasApproved = true;
                 } else {
                     $item->status = 'rejected';
+                    // Save rejection reason if provided
+                    $item->rejection_reason = $data['rejection_reason'][$key] ?? null;
                 }
 
                 $item->save();
@@ -187,10 +192,11 @@ class RequestController extends Controller
      */
   
 
-public function release(Request $request, StockRequest $stockRequest)
+public function release(\Illuminate\Http\Request $httpRequest, StockRequest $stockRequest)
     {
-        $request->validate([
-            'verification_code' => 'required|string'
+        $httpRequest->validate([
+            'verification_code' => 'required|string',
+            'received_by' => 'required|string|max:255'
         ]);
 
         // ✅ must be ready_to_receive
@@ -199,7 +205,7 @@ public function release(Request $request, StockRequest $stockRequest)
         }
 
         // ✅ verify code
-        if (trim($request->verification_code) !== trim((string)$stockRequest->verification_code)) {
+        if (trim($httpRequest->verification_code) !== trim((string)$stockRequest->verification_code)) {
             return back()->with('error', 'Invalid verification code.');
         }
 
@@ -209,7 +215,7 @@ public function release(Request $request, StockRequest $stockRequest)
         }
 
         try {
-            DB::transaction(function () use ($stockRequest) {
+            DB::transaction(function () use ($stockRequest, $httpRequest) {
 
                 // lock the request row
                 $req = StockRequest::where('id', $stockRequest->id)
@@ -217,6 +223,9 @@ public function release(Request $request, StockRequest $stockRequest)
                     ->firstOrFail();
 
                 $req->load(['items.stock']);
+                
+                // Update received_by before saving
+                $req->received_by = $httpRequest->received_by;
 
                 foreach ($req->items as $item) {
                     $approved = (int)($item->approved_qty ?? 0);
@@ -249,6 +258,7 @@ public function release(Request $request, StockRequest $stockRequest)
 
                         // ✅ marks that deduction happened
                         'deducted_at'  => now(),
+                        'received_by'  => $httpRequest->received_by,
                     ]);
 
                     // ✅ deduct immediately (THIS is what you want)
@@ -257,6 +267,7 @@ public function release(Request $request, StockRequest $stockRequest)
 
                 // ✅ move request out of workflow
                 $req->status = 'released';
+                $req->received_by = $httpRequest->received_by;
                 $req->save();
             });
 

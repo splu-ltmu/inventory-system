@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Outbound';
-  $pageSubtitle = 'Create a new outbound item release.';
 @endphp
 
 @section('sidebar')
@@ -114,16 +113,35 @@
         </div>
 
         <div class="form-group">
-            <label for="client_id">Client:</label>
-            <select name="client_id" id="client_id" required>
-                <option value="">-- Choose a client --</option>
-                @forelse($clients as $client)
-                    <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>{{ $client->name }}</option>
-                @empty
-                    <option value="">No clients available</option>
-                @endforelse
-            </select>
-            @error('client_id')<span style="color:#ef4444;font-size:12px;">{{ $message }}</span>@enderror
+            <label for="recipient_search">Recipient (Client or Urgent):</label>
+            <div style="position:relative;">
+                <input 
+                    type="text" 
+                    id="recipient_search" 
+                    name="recipient_search" 
+                    value="{{ old('recipient_search', '') }}" 
+                    placeholder="Type client name, member name, or office for urgent outbound..."
+                    required
+                    style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:14px; box-sizing:border-box;"
+                >
+                
+                <!-- Hidden fields to store the selected recipient data -->
+                <input type="hidden" name="client_id" id="client_id" value="">
+                <input type="hidden" name="member_id" id="member_id" value="">
+                <input type="hidden" name="urgent_recipient_id" id="urgent_recipient_id" value="">
+                <input type="hidden" name="urgent_recipient_name" id="urgent_recipient_name" value="">
+                <input type="hidden" name="urgent_recipient_office" id="urgent_recipient_office" value="">
+                <input type="hidden" name="is_urgent_outbound" id="is_urgent_outbound" value="false">
+                
+                <!-- Dropdown for search results -->
+                <div id="recipient_dropdown" style="position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); max-height:200px; overflow-y:auto; z-index:1000; display:none;">
+                    <div id="recipient_results"></div>
+                </div>
+            </div>
+            <div style="margin-top:8px; font-size:12px; color:var(--muted);">
+                <span id="recipient_type_hint"></span>
+            </div>
+            @error('recipient_search')<span style="color:#ef4444;font-size:12px;">{{ $message }}</span>@enderror
         </div>
 
         <div class="form-group">
@@ -150,7 +168,13 @@
 document.addEventListener('DOMContentLoaded', function(){
     const select = document.getElementById('stock_id');
     const badge = document.getElementById('stockAvailableBadge');
+    const recipientSearch = document.getElementById('recipient_search');
+    const recipientDropdown = document.getElementById('recipient_dropdown');
+    const recipientResults = document.getElementById('recipient_results');
+    const recipientTypeHint = document.getElementById('recipient_type_hint');
+    const officeInput = document.getElementById('office');
 
+    // Stock availability badge functionality
     function updateBadge(){
         const opt = select.options[select.selectedIndex];
         const avail = opt && opt.dataset ? parseInt(opt.dataset.available || '0', 10) : 0;
@@ -171,6 +195,206 @@ document.addEventListener('DOMContentLoaded', function(){
 
     select.addEventListener('change', updateBadge);
     updateBadge();
+
+    // Recipient search functionality
+    let searchTimeout;
+    let selectedRecipient = null;
+
+    recipientSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const searchTerm = this.value.trim();
+        
+        if (searchTerm.length < 2) {
+            recipientDropdown.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            searchRecipients(searchTerm);
+        }, 300);
+    });
+
+    recipientSearch.addEventListener('focus', function() {
+        if (this.value.trim().length >= 2) {
+            searchRecipients(this.value.trim());
+        }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!recipientSearch.contains(e.target) && !recipientDropdown.contains(e.target)) {
+            recipientDropdown.style.display = 'none';
+        }
+    });
+
+    function searchRecipients(term) {
+        fetch(`/admin/outbound/search-recipients?term=${encodeURIComponent(term)}`)
+            .then(response => response.json())
+            .then(data => {
+                displayRecipientResults(data, term);
+            })
+            .catch(error => {
+                console.error('Error searching recipients:', error);
+                recipientDropdown.style.display = 'none';
+            });
+    }
+
+    function displayRecipientResults(results, searchTerm) {
+        recipientResults.innerHTML = '';
+        
+        if (results.length === 0) {
+            // Show the typed name as a non-member option
+            recipientResults.innerHTML = `
+                <div class="recipient-option" data-name="${searchTerm}" data-type="non-member" style="padding:12px; cursor:pointer; border-bottom:1px solid #f3f4f6; transition:background 0.2s;">
+                    <div style="font-weight:600; color:#dc2626;">${searchTerm}</div>
+                    <div style="font-size:12px; color:#6b7280; margin-top:2px;">
+                        Non-member - Will be saved as urgent recipient
+                    </div>
+                </div>
+            `;
+            
+            // Add click handler for non-member option
+            const nonMemberOption = recipientResults.querySelector('.recipient-option');
+            if (nonMemberOption) {
+                nonMemberOption.addEventListener('click', () => {
+                    selectNonMemberRecipient(searchTerm);
+                });
+                nonMemberOption.addEventListener('mouseenter', () => nonMemberOption.style.background = '#fef2f2');
+                nonMemberOption.addEventListener('mouseleave', () => nonMemberOption.style.background = '');
+            }
+        } else {
+            results.forEach(result => {
+                const item = document.createElement('div');
+                item.style.cssText = 'padding:12px; cursor:pointer; border-bottom:1px solid #f3f4f6; transition:background 0.2s';
+                item.innerHTML = `
+                    <div style="font-weight:600; color:#1f2937;">${result.name}</div>
+                    <div style="font-size:12px; color:#6b7280; margin-top:2px;">
+                        ${result.type === 'client' ? 'Client' : result.type === 'member' ? 'Client Member' : 'Urgent Recipient'}
+                        ${result.office ? ` • ${result.office}` : ''}
+                    </div>
+                `;
+                
+                item.addEventListener('click', () => selectRecipient(result));
+                item.addEventListener('mouseenter', () => item.style.background = '#f9fafb');
+                item.addEventListener('mouseleave', () => item.style.background = '');
+                
+                recipientResults.appendChild(item);
+            });
+        }
+        
+        recipientDropdown.style.display = 'block';
+    }
+
+    function selectNonMemberRecipient(name) {
+        selectedRecipient = { type: 'non-member', name: name };
+        recipientSearch.value = name;
+        
+        // Clear all hidden fields first
+        document.getElementById('client_id').value = '';
+        document.getElementById('member_id').value = '';
+        document.getElementById('urgent_recipient_id').value = '';
+        document.getElementById('urgent_recipient_name').value = name;
+        document.getElementById('urgent_recipient_office').value = '';
+        document.getElementById('is_urgent_outbound').value = 'true';
+        
+        // Enable office field for non-members
+        officeInput.value = '';
+        officeInput.disabled = false;
+        recipientTypeHint.textContent = 'Selected: Non-member - Will create urgent recipient';
+        recipientTypeHint.style.color = '#dc2626';
+        
+        recipientDropdown.style.display = 'none';
+    }
+
+    function selectRecipient(result) {
+        selectedRecipient = result;
+        recipientSearch.value = result.name;
+        
+        // Clear all hidden fields first
+        document.getElementById('client_id').value = '';
+        document.getElementById('member_id').value = '';
+        document.getElementById('urgent_recipient_id').value = '';
+        document.getElementById('urgent_recipient_name').value = '';
+        document.getElementById('urgent_recipient_office').value = '';
+        document.getElementById('is_urgent_outbound').value = 'false';
+        
+        if (result.type === 'client') {
+            document.getElementById('client_id').value = result.id;
+            document.getElementById('is_urgent_outbound').value = 'false';
+            officeInput.value = result.office || '';
+            officeInput.disabled = false;
+            recipientTypeHint.textContent = 'Selected: Client - Office will be used for outbound record';
+            recipientTypeHint.style.color = '#059669';
+        } else if (result.type === 'member') {
+            document.getElementById('client_id').value = result.client_id;
+            document.getElementById('member_id').value = result.id;
+            document.getElementById('is_urgent_outbound').value = 'false';
+            
+            // Auto-populate office field and handle non-office members
+            if (result.has_office) {
+                officeInput.value = result.office;
+                officeInput.disabled = false;
+                recipientTypeHint.textContent = `Selected: Client Member (${result.client_name}) - Office: ${result.office}`;
+                recipientTypeHint.style.color = '#059669';
+            } else {
+                officeInput.value = 'non office member';
+                officeInput.disabled = true; // Disable for non-office members
+                recipientTypeHint.textContent = `Selected: Client Member (${result.client_name}) - Non-office member`;
+                recipientTypeHint.style.color = '#f59e0b';
+            }
+        } else {
+            document.getElementById('urgent_recipient_id').value = result.id;
+            document.getElementById('urgent_recipient_name').value = result.name;
+            document.getElementById('urgent_recipient_office').value = result.office || '';
+            document.getElementById('is_urgent_outbound').value = 'true';
+            officeInput.value = result.office || '';
+            officeInput.disabled = false;
+            recipientTypeHint.textContent = 'Selected: Urgent Recipient - Will appear in Summary tab';
+            recipientTypeHint.style.color = '#dc2626';
+        }
+        
+        recipientDropdown.style.display = 'none';
+    }
+
+    // Handle Enter key for creating new urgent recipient
+    recipientSearch.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const searchTerm = this.value.trim();
+            
+            if (searchTerm && selectedRecipient && selectedRecipient.name === searchTerm) {
+                // Already selected, submit form
+                this.closest('form').submit();
+            } else if (searchTerm) {
+                // Create new urgent recipient
+                createUrgentRecipient(searchTerm);
+            }
+        }
+    });
+
+    function createUrgentRecipient(name) {
+        // Extract office from the input if it contains a comma or "office:" pattern
+        let recipientName = name;
+        let recipientOffice = '';
+        
+        if (name.includes(',')) {
+            const parts = name.split(',');
+            recipientName = parts[0].trim();
+            recipientOffice = parts[1].trim();
+        } else if (name.toLowerCase().includes('office:')) {
+            const parts = name.split(/office:/i);
+            recipientName = parts[0].trim();
+            recipientOffice = parts[1].trim();
+        }
+        
+        const urgentData = {
+            type: 'urgent_new',
+            name: recipientName,
+            office: recipientOffice
+        };
+        
+        selectRecipient(urgentData);
+    }
 });
 </script>
 

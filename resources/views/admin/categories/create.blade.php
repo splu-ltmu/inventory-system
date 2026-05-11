@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Categories';
-  $pageSubtitle = 'Add new category.';
 @endphp
 
 @section('sidebar')

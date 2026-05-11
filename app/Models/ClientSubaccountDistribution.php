@@ -13,6 +13,7 @@ class ClientSubaccountDistribution extends Model
         'member_id',
         'stock_request_item_id',
         'distributed_qty',
+        'used_qty',
     ];
 
     public function member()

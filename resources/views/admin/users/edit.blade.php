@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Edit Account';
-  $pageSubtitle = 'Edit client account details.';
 @endphp
 
 @section('sidebar')

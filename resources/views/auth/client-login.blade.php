@@ -52,13 +52,15 @@
     .login-container{
         width:100%;
         max-width:400px;
-        background: var(--panel);
-        border:1px solid var(--line);
+        background: rgba(255, 255, 255, 0.75);
+        border:1px solid rgba(255, 255, 255, 0.2);
         border-radius:14px;
         padding:40px;
         box-shadow:0 1px 3px rgba(0,0,0,.1);
         position: relative;
         z-index: 2;
+        backdrop-filter: blur(10px);
+        animation: slideUp 0.5s ease;
     }
 
     .login-logo{
@@ -71,6 +73,12 @@
         height:auto;
         display:block;
         margin:0 auto;
+        transition: transform 0.3s ease;
+        animation: fadeIn 0.8s ease 0.2s both;
+    }
+
+    .login-logo img:hover{
+        transform: scale(1.05);
     }
 
     .logo-label{
@@ -80,11 +88,13 @@
         color:var(--blue);
         margin-top:12px;
         letter-spacing:1px;
+        animation: fadeIn 0.8s ease 0.4s both;
     }
 
     .login-header{
         text-align:center;
         margin-bottom:32px;
+        animation: fadeIn 0.8s ease 0.6s both;
     }
 
     .login-header h2{
@@ -119,7 +129,11 @@
         font-size:14px;
         background: white;
         color: var(--text);
-        transition:border-color .2s;
+        transition:border-color .2s, box-shadow .2s;
+    }
+
+    .form-group input:hover{
+        border-color: rgba(37,99,235,0.3);
     }
 
     .form-group input:focus{
@@ -144,6 +158,23 @@
         cursor:pointer;
         transition: all 0.3s ease;
         margin-top:8px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-submit::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn-submit:hover::before {
+        left: 100%;
     }
 
     .btn-submit:hover{
@@ -165,6 +196,33 @@
         border-radius:8px;
         margin-bottom:20px;
         font-size:14px;
+        animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
 
     .login-footer{
@@ -226,7 +284,10 @@
             top: 38px;
             cursor: pointer;
             user-select: none;
+            transition: transform 0.2s ease;
         "
+        onmouseover="this.style.transform='scale(1.2)'"
+        onmouseout="this.style.transform='scale(1)'"
     >
         👁️
     </span>
@@ -263,11 +324,14 @@
 
 function togglePassword() {
     const password = document.getElementById("password");
+    const eye = event.target;
 
     if (password.type === "password") {
         password.type = "text";
+        eye.textContent = "🙈";
     } else {
         password.type = "password";
+        eye.textContent = "👁️";
     }
 }
 
