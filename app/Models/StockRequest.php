@@ -11,14 +11,22 @@ class StockRequest extends Model
 
     protected $fillable = [
         'client_id',
+        'member_id',
         'office',
+        'reason',
         'status',
         'verification_code',
+        'received_by',
     ];
 
     public function client()
     {
         return $this->belongsTo(User::class, 'client_id');
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(ClientMember::class, 'member_id');
     }
 
     // ✅ IMPORTANT: specify FK because your child table uses stock_request_id

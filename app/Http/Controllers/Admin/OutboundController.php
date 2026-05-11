@@ -8,6 +8,8 @@ use App\Models\Outbound;
 use App\Models\Stock;
 use App\Models\StockRequest;
 use App\Models\StockRequestItem;
+use App\Models\UrgentOutboundRecipient;
+use App\Models\ClientMember;
 use Illuminate\Support\Facades\DB;
 
 class OutboundController extends Controller
@@ -15,7 +17,9 @@ class OutboundController extends Controller
     public function index()
     {
         $outbounds = Outbound::with(['stock', 'client'])->latest()->get();
-        return view('admin.outbound.index', compact('outbounds'));
+        $clients = \App\Models\User::where('role', 'client')->get();
+        $members = ClientMember::with('client')->get();
+        return view('admin.outbound.index', compact('outbounds', 'clients', 'members'));
     }
 
     public function create()
@@ -25,19 +29,137 @@ class OutboundController extends Controller
         return view('admin.outbound.create', compact('stocks', 'clients'));
     }
 
+    public function searchRecipients(Request $request)
+    {
+        $term = $request->get('term', '');
+        $results = [];
+
+        if (strlen($term) >= 2) {
+            // Search clients
+            $clients = \App\Models\User::where('role', 'client')
+                ->where(function($query) use ($term) {
+                    $query->where('name', 'like', "%{$term}%")
+                          ->orWhere('office', 'like', "%{$term}%");
+                })
+                ->get();
+
+            foreach ($clients as $client) {
+                $results[] = [
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'office' => $client->office,
+                    'type' => 'client'
+                ];
+            }
+
+            // Search client members
+            $members = ClientMember::with('client')
+                ->where(function($query) use ($term) {
+                    $query->where('name', 'like', "%{$term}%")
+                          ->orWhere('email', 'like', "%{$term}%");
+                })
+                ->get();
+
+            foreach ($members as $member) {
+                $office = $member->client->office ?? 'non office member';
+                $results[] = [
+                    'id' => $member->id,
+                    'client_id' => $member->client_id,
+                    'name' => $member->name,
+                    'email' => $member->email,
+                    'office' => $office,
+                    'client_name' => $member->client->name,
+                    'type' => 'member',
+                    'has_office' => !empty($member->client->office)
+                ];
+            }
+
+            // Search urgent recipients
+            $urgentRecipients = UrgentOutboundRecipient::search($term)->get();
+
+            foreach ($urgentRecipients as $urgent) {
+                $results[] = [
+                    'id' => $urgent->id,
+                    'name' => $urgent->name,
+                    'office' => $urgent->office,
+                    'type' => 'urgent'
+                ];
+            }
+        }
+
+        return response()->json($results);
+    }
+
     public function store(Request $request)
     {
-        $request->validate([
-            'stock_id'  => 'required|exists:stocks,id',
-            'client_id' => 'required|exists:users,id',
-            'office'    => 'required|string',
-            'total'     => 'required|integer|min:1',
-        ]);
+        $isUrgentOutbound = $request->input('is_urgent_outbound', 'false') === 'true';
+        
+        if ($isUrgentOutbound) {
+            $request->validate([
+                'stock_id'  => 'required|exists:stocks,id',
+                'urgent_recipient_name' => 'required|string|max:255',
+                'urgent_recipient_office' => 'nullable|string|max:255',
+                'total'     => 'required|integer|min:1',
+                'reason'    => 'nullable|string|max:1000',
+            ]);
+        } else {
+            $request->validate([
+                'stock_id'  => 'required|exists:stocks,id',
+                'client_id' => 'required|exists:users,id',
+                'office'    => 'required|string',
+                'total'     => 'required|integer|min:1',
+                'reason'    => 'nullable|string|max:1000',
+            ]);
+        }
 
         // Approval and status are set automatically when admin creates an outbound
-        $data = $request->only('stock_id','client_id','office','total');
+        $data = $request->only('stock_id','total','reason');
         $data['approval'] = 'approved';
         $data['status'] = 'received';
+
+        if ($isUrgentOutbound) {
+            // Handle urgent recipient
+            $urgentRecipientName = $request->input('urgent_recipient_name');
+            $urgentRecipientOffice = $request->input('urgent_recipient_office', '');
+            $urgentRecipientId = $request->input('urgent_recipient_id');
+
+            if ($urgentRecipientId) {
+                // Use existing urgent recipient
+                $data['urgent_recipient_id'] = $urgentRecipientId;
+                $data['urgent_recipient_name'] = $urgentRecipientName;
+                $data['urgent_recipient_office'] = $urgentRecipientOffice;
+            } else {
+                // Create new urgent recipient
+                $urgentRecipient = UrgentOutboundRecipient::create([
+                    'name' => $urgentRecipientName,
+                    'office' => $urgentRecipientOffice,
+                    'reason' => 'Urgent outbound request',
+                ]);
+                
+                $data['urgent_recipient_id'] = $urgentRecipient->id;
+                $data['urgent_recipient_name'] = $urgentRecipientName;
+                $data['urgent_recipient_office'] = $urgentRecipientOffice;
+            }
+            
+            $data['is_urgent_outbound'] = true;
+            $data['client_id'] = null;
+            $data['office'] = $urgentRecipientOffice;
+        } else {
+            // Handle regular client or member
+            $data['client_id'] = $request->input('client_id');
+            $data['office'] = $request->input('office');
+            $data['is_urgent_outbound'] = false;
+            
+            // Check if this is a member selection or direct client request
+            $memberId = $request->input('member_id');
+            if ($memberId) {
+                $data['member_id'] = $memberId;
+                $data['is_direct_request'] = true;
+            } else {
+                // This is a direct request from main client/office (no member selected)
+                $data['is_direct_request'] = true;
+            }
+        }
 
         // If status is received on create, perform deduction and set deducted_at atomically
         if (($data['status'] ?? '') === 'received') {

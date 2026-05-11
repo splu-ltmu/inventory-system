@@ -14,6 +14,8 @@ class StockRequestItem extends Model
         'stock_id',
         'requested_qty',
         'approved_qty',
+        'distributed_qty',
+        'rejection_reason',
         // 'status', // ✅ keep ONLY if this column exists in your table
     ];
 
@@ -25,6 +27,16 @@ class StockRequestItem extends Model
     public function stock()
     {
         return $this->belongsTo(Stock::class, 'stock_id');
+    }
+
+    public function distributions()
+    {
+        return $this->hasMany(ClientSubaccountDistribution::class, 'stock_request_item_id');
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(ClientSubaccountAllocation::class, 'stock_request_item_id');
     }
 
     // OPTIONAL: helpers

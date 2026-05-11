@@ -92,9 +92,11 @@
         text-decoration:none;
         color:var(--text);
         padding:11px 12px;
+        min-height:44px;
         border-radius:10px;
         border:1px solid transparent;
         background:#ffffff;
+        white-space:nowrap;
         transition:transform .16s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
     }
 
@@ -473,6 +475,7 @@
         .nav a{
             flex:1 1 calc(50% - 3px);
             min-width:120px;
+            min-height:40px;
             padding:8px 10px;
             font-size:13px;
         }
@@ -866,7 +869,6 @@
             </div>
             <div class="role" style="position: relative; text-align: center;">
                 Logged in as: <b>{{ auth()->user()->name ?? 'User' }}</b>
-                <small>({{ auth()->user()->role ?? 'role' }})</small>
             </div>
         </div>
 
@@ -900,12 +902,62 @@
     <main class="main">
         <div class="topbar">
             <div>
-                <div class="title">{{ $pageTitle ?? 'Dashboard' }}</div>
-                <div class="sub">{{ $pageSubtitle ?? 'Choose a tab on the left.' }}</div>
+                @if(($pageTitle ?? 'Dashboard') === 'Client Portal')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Client Portal</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Dashboard</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'Transaction History')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Transaction History</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Records</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'My Inventory')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">My Inventory</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Stock items</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'Report')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Report</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Analytics</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'Members')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Members</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">User management</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'Offices')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Offices</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Subaccounts</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'Account Settings')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Account Settings</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Profile</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'Available Stocks')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Available Stocks</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Stock catalog</div>
+                    </div>
+                @elseif(($pageTitle ?? 'Dashboard') === 'My Requests')
+                    <div>
+                        <div style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">My Requests</div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 400;">Request status</div>
+                    </div>
+                @else
+                    <div class="title">{{ $pageTitle ?? 'Dashboard' }}</div>
+                @endif
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
                 <div style="color: var(--muted); font-size:12px;">{{ now()->format('M d, Y h:i A') }}</div>
-                @include('partials.top-notifications')
+                @if(auth()->user()->role === 'admin')
+                    @include('partials.top-notifications')
+                @elseif(auth()->user()->role === 'client')
+                    @include('partials.client-notifications')
+                @endif
             </div>
         </div>
 

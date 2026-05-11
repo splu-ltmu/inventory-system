@@ -72,13 +72,13 @@ class InboundController extends Controller
             $stockRows[] = [ $s->id_no, $s->description, optional($s->category)->name ?? 'Unknown' ];
         }
 
-        // If PhpSpreadsheet is available, build an XLSX with Stock ID dropdown + VLOOKUP autofill for Description/Category
+        // If PhpSpreadsheet is available, build an XLSX with Stock ID dropdown + VLOOKUP autofill for Description/Category/Price
         if (class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Inbound Template');
 
-            // Add a hidden lookup sheet for stocks (id_no, description, category)
+            // Add a hidden lookup sheet for stocks (description, id_no, category)
             $stockLookup = $spreadsheet->createSheet();
             $stockLookup->setTitle('stocks_lookup');
             foreach ($stockRows as $i => $rowVals) {
@@ -91,8 +91,8 @@ class InboundController extends Controller
 
             // Instruction row (row 1) — visible guidance for users
             $instructionText = $stockLookupCount > 0
-                ? 'Instructions: Enter or select Description (dropdown suggests existing stocks, but new descriptions are fully allowed). Quantity is required. Unit defaults to pcs if blank. Category auto-fills from Description or use dropdown.'
-                : 'Instructions: Enter new item descriptions (no existing stocks in database yet). Quantity is required. Unit defaults to pcs if blank. Category will be created automatically if it doesn\'t exist.';
+                ? 'Instructions: Enter or select Description (dropdown suggests existing stocks, but new descriptions are fully allowed). Quantity is required. Unit defaults to pcs if blank. Category auto-fill from Description when known.'
+                : 'Instructions: Enter new item descriptions (no existing stocks in database yet). Quantity is required. Unit defaults to pcs if blank. Category will be created automatically if missing.';
             $sheet->fromArray([$instructionText], null, 'A1');
             $instCell = $sheet->getCell('A1');
             $instCell->getStyle()->getFont()->setItalic(true)->setSize(9)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF666666'));
@@ -135,19 +135,20 @@ class InboundController extends Controller
                 // If no existing stocks, no validation applied - completely free text entry
 
                 // Category autofill via formula when Description chosen (lookup by description)
-                // Place category in column D (Description=A, Unit=B, Quantity=C, Category=D)
-                $sheet->setCellValue('D' . $row, '=IF($A' . $row . '<>"",IFERROR(VLOOKUP($A' . $row . ',stocks_lookup!$A$1:$C$' . $stockLookupCount . ',3,FALSE),""),"")');
+                // Place category in column E and price in column D (Description=A, Unit=B, Quantity=C, Price=D, Category=E)
+                $sheet->setCellValue('D' . $row, '=IF($A' . $row . '<>"",IFERROR(VLOOKUP($A' . $row . ',stocks_lookup!$A$1:$D$' . $stockLookupCount . ',3,FALSE),""),"")');
+                $sheet->setCellValue('E' . $row, '=IF($A' . $row . '<>"",IFERROR(VLOOKUP($A' . $row . ',stocks_lookup!$A$1:$D$' . $stockLookupCount . ',4,FALSE),""),"")');
 
                 // Category dropdown data validation as fallback when not using existing stock descriptions
-                $cellD = $sheet->getCell('D' . $row);
-                $validationD = $cellD->getDataValidation();
-                $validationD->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-                $validationD->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
-                $validationD->setAllowBlank(true);
-                $validationD->setShowInputMessage(true);
-                $validationD->setShowErrorMessage(true);
-                $validationD->setShowDropDown(true);
-                $validationD->setFormula1('=categories_lookup!$A$1:$A$' . $catLookupCount);
+                $cellE = $sheet->getCell('E' . $row);
+                $validationE = $cellE->getDataValidation();
+                $validationE->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+                $validationE->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+                $validationE->setAllowBlank(true);
+                $validationE->setShowInputMessage(true);
+                $validationE->setShowErrorMessage(true);
+                $validationE->setShowDropDown(true);
+                $validationE->setFormula1('=categories_lookup!$A$1:$A$' . $catLookupCount);
             }
 
             // Hide lookup sheets
@@ -167,7 +168,7 @@ class InboundController extends Controller
         // Include a commented suggestions line (starts with #) listing current stock descriptions — importer will skip comment lines.
         $stockDescriptions = array_map(function($r){ return $r[1]; }, $stockRows);
         $suggestions = '# Suggestions: ' . implode(' | ', $stockDescriptions) . "\n";
-        $csv = "Description,Unit,Quantity,Category\n" . $suggestions;
+        $csv = "Description,Unit,Quantity,Price,Category\n" . $suggestions;
         return response($csv, 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="inbound-template.csv"',
@@ -221,12 +222,13 @@ class InboundController extends Controller
             while (($data = fgetcsv($handle, 0, ',')) !== false) {
                 $idx++;
                 if (isset($data[0]) && str_starts_with(trim($data[0]), '#')) continue; // comments
-                // Map to A,B,C,D to support Description,Unit,Quantity,Category
+                // Map to A,B,C,D,E to support Description,Unit,Quantity,Price,Category
                 $rows[$idx] = [
                     'A' => $data[0] ?? null,
                     'B' => $data[1] ?? null,
                     'C' => $data[2] ?? null,
                     'D' => $data[3] ?? null,
+                    'E' => $data[4] ?? null,
                 ];
             }
             fclose($handle);
@@ -237,7 +239,7 @@ class InboundController extends Controller
         $errors = [];
 
         // Determine column mapping from header row (row 2 in template with instruction row; row 1 in older imports)
-        $colMap = ['description' => 'A', 'unit' => null, 'quantity' => 'B', 'category' => 'C', 'id' => null];
+        $colMap = ['description' => 'A', 'unit' => null, 'quantity' => 'B', 'price' => null, 'category' => 'C', 'id' => null];
         $headerRowIndex = 1; // assume older format without instruction row
         if (isset($rows[2]) && is_array($rows[2])) {
             // New template format: instruction at row 1, header at row 2
@@ -254,6 +256,7 @@ class InboundController extends Controller
                 if (str_contains($h, 'description')) $colMap['description'] = $col;
                 elseif (str_contains($h, 'unit')) $colMap['unit'] = $col;
                 elseif (str_contains($h, 'quantity') || str_contains($h, 'qty')) $colMap['quantity'] = $col;
+                elseif (str_contains($h, 'price')) $colMap['price'] = $col;
                 elseif (str_contains($h, 'category')) $colMap['category'] = $col;
                 elseif (str_contains($h, 'stock id') || $h === 'id' || str_contains($h, 'id_no')) $colMap['id'] = $col;
             }
@@ -274,6 +277,7 @@ class InboundController extends Controller
             $description = trim((string) ($row[$colMap['description']] ?? ''));
             $unit = trim((string) ($row[$colMap['unit']] ?? ''));
             $quantityRaw = trim((string) ($row[$colMap['quantity']] ?? ''));
+            $priceRaw = $colMap['price'] ? trim((string) ($row[$colMap['price']] ?? '')) : '';
 
             // Extract numeric value from quantity (e.g., "5 pcs" → 5, "5.5 pieces" → 5.5, "5,000" → 5000)
             $quantityNumeric = null;
@@ -301,13 +305,19 @@ class InboundController extends Controller
                     }
                 }
             }
-            
+
             $categoryName = trim((string) ($row[$colMap['category']] ?? ''));
             $idNo = isset($colMap['id']) && isset($row[$colMap['id']]) ? trim((string) ($row[$colMap['id']] ?? '')) : null;
+            $priceNumeric = null;
+            if ($priceRaw !== '') {
+                if (preg_match('/(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)/', str_replace(["\xc2\xa0"], [' '], $priceRaw), $m)) {
+                    $priceNumeric = (float) str_replace(',', '.', $m[1]);
+                }
+            }
 
             if ($description === '' && $quantityRaw === '' && $categoryName === '' && empty($idNo)) continue; // empty row
 
-            if ($quantityNumeric === null || $quantityNumeric <= 0) {
+            if ($quantityNumeric === null) {
                 $errors[] = "Row $index: invalid quantity '" . ($row[$colMap['quantity']] ?? '') . "'";
                 continue;
             }
@@ -326,7 +336,12 @@ class InboundController extends Controller
                     'category' => $categoryName,
                     'id_no' => $idNo,
                     'quantity' => 0,
+                    'price' => $priceNumeric,
                 ];
+            }
+
+            if ($aggregates[$key]['price'] === null && $priceNumeric !== null) {
+                $aggregates[$key]['price'] = $priceNumeric;
             }
 
             $aggregates[$key]['quantity'] += $quantity;
@@ -384,6 +399,7 @@ class InboundController extends Controller
                     'id_no' => $newId,
                     'description' => $description ?: 'Imported item',
                     'unit' => $item['unit'] ?? 'pcs',
+                    'price' => $item['price'] ?? 0,
                     'total' => 0,
                     'stock' => 0,
                     'hidden' => false,
@@ -391,12 +407,16 @@ class InboundController extends Controller
                 $createdStocks++;
             }
 
-            Inbound::create(['stock_id' => $stock->id, 'total' => $quantity]);
-            $stock->total += $quantity;
-            $stock->stock += $quantity;
-            $stock->save();
-
-            $imported++;
+            if ($quantity > 0) {
+                Inbound::create(['stock_id' => $stock->id, 'total' => $quantity]);
+                $stock->total += $quantity;
+                $stock->stock += $quantity;
+                $stock->save();
+                $imported++;
+            } else {
+                // Still save stock changes if any, but don't create inbound record for zero quantity
+                $stock->save();
+            }
         }
 
         $msg = "Imported: $imported";

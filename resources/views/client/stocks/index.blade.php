@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Available Stocks';
-  $pageSubtitle = 'Create one request with multiple items.';
 
   // ✅ FIX: prepare data BEFORE @json to avoid Blade parse error
   $stocksJson = $stocks->map(function ($s) {
@@ -19,25 +18,7 @@
 @endphp
 
 @section('sidebar')
-    <a href="{{ route('client.dashboard') }}" class="{{ request()->is('client') ? 'active' : '' }}">
-        Dashboard <small>Home</small>
-    </a>
-
-    <a href="{{ route('client.summary') }}" class="{{ request()->is('client/summary*') ? 'active' : '' }}">
-        Summary <small>Transactions</small>
-    </a>
-
-    <a href="{{ route('client.stocks') }}" class="{{ request()->is('client/stocks*') ? 'active' : '' }}">
-        Available Stocks <small>Request items</small>
-    </a>
-
-    <a href="{{ route('client.requests') }}" class="{{ request()->is('client/requests*') ? 'active' : '' }}">
-        My Requests <small>Status + Code</small>
-    </a>
-
-    <a href="{{ route('client.account') }}" class="{{ request()->is('client/account*') ? 'active' : '' }}">
-        Account Settings <small>Email & Password</small>
-    </a>
+    @include('client.sidebar')
 @endsection
 
 @section('content')
@@ -99,9 +80,10 @@
         transform: translateY(0);
     }
 
-    table{ width:100%; border-collapse: collapse; }
-    th, td{ border:1px solid #e2e8f0; padding:10px; text-align:left; }
-    th{ background:#f8fafc; }
+    table{ width:100%; border-collapse: collapse; margin-bottom:16px; border-radius:12px; box-shadow:0 8px 25px rgba(59,130,246,0.15); background:linear-gradient(135deg, #eff6ff, #dbeafe); }
+    th, td{ border:1px solid #e0e7ff; padding:10px; text-align:left; }
+    th{ background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:#ffffff; font-weight:700; font-size:12px; text-shadow:0 2px 4px rgba(0,0,0,0.3); border-bottom:2px solid #1e40af; }
+    tr:hover{ background:linear-gradient(135deg, #ffffff, #f8fafc); }
 
     .pill{
         display:inline-block;
@@ -122,46 +104,75 @@
         display:none;
         position:fixed;
         inset:0;
-        background: rgba(15,23,42,.45);
+        background: rgba(15,23,42,.65);
         z-index:9999;
-        padding:18px;
+        padding:24px;
+        backdrop-filter: blur(4px);
     }
     .modal.active{
         display:flex;
         align-items:center;
         justify-content:center;
         overflow-y:auto;
+        animation: modalFadeIn 0.3s ease;
     }
     .modal-card{
-        max-width: 900px;
+        max-width: 1100px; /* Increased from 950px to 1100px */
         width:100%;
-        max-height: calc(100vh - 36px);
-        background:#ffffff;
+        max-height: calc(100vh - 48px);
+        background: linear-gradient(135deg, #ffffff, #fafbfc);
         border:1px solid #e2e8f0;
-        border-radius:16px;
-        overflow:auto;
-        box-shadow:0 18px 48px rgba(15,23,42,.18);
+        border-radius:20px;
+        overflow:hidden;
+        box-shadow:0 25px 60px rgba(15,23,42,.25);
         flex-shrink:0;
+        animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        width: 115%; /* Expanded from 100% to 115% */
     }
     .modal-head{
         display:flex;
         justify-content:space-between;
         align-items:center;
-        gap:10px;
-        padding:14px 16px;
-        background:#eff6ff; /* blue soft */
-        border-bottom:1px solid #e2e8f0;
+        gap:16px;
+        padding:20px 24px;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        border-bottom:1px solid rgba(99, 102, 241, 0.2);
+        position: relative;
+    }
+    .modal-head::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+        animation: shimmer 3s infinite;
     }
     .modal-title{
-        font-size:16px;
-        font-weight:900;
-        color:#0f172a;
+        font-size:20px;
+        font-weight:800;
+        color:#ffffff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .modal-title::before {
+        content: 'create';
+        font-size: 16px;
+        background: rgba(255,255,255,0.2);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: 600;
     }
     .modal-body{
-        padding:16px;
+        padding:24px;
         display:grid;
-        grid-template-columns: 1.2fr .8fr;
-        gap:14px;
+        grid-template-columns: 1.3fr .7fr;
+        gap:20px;
+        background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
+        min-height: 500px; /* Ensure enough height for all content */
+        text-align: center; /* Center the table in cart container */
     }
     
     /* show cart toggle button on mobile */
@@ -188,77 +199,183 @@
     .field{
         display:flex;
         flex-direction:column;
-        gap:6px;
-        margin-bottom:10px;
+        gap:8px;
+        margin-bottom:16px;
+        align-items: flex-start;
+    }
+    .field label{
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+    .field label b{
+        color: #6366f1;
     }
     input, select{
-        padding:10px 12px;
+        padding:12px 16px;
         border-radius:12px;
-        border:1px solid #e2e8f0;
+        border:2px solid #e2e8f0;
         outline:none;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background: #ffffff;
     }
-    input:focus{ border-color:#93c5fd; }
-    .muted{ color:#64748b; font-size:12px; }
+    input:focus, select:focus{ 
+        border-color:#6366f1; 
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        transform: translateY(-1px);
+    }
+    .muted{ color:#64748b; font-size:13px; font-weight: 500; }
 
-    .cart{
-        border:1px solid #e2e8f0;
-        border-radius:14px;
+    .cart{ 
+        border:2px solid #e2e8f0;
+        border-radius:16px;
         overflow:hidden;
-        background:#fff;
+        background: linear-gradient(135deg, #ffffff, #f8fafc);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        width: 100%; /* Increased from 90% to 100% to make it wider */
+        margin-right: 40px; /* Increased space on the right side */
+        padding-right: 20px; /* Added padding to ensure quantity field is visible */
+    }
+    .cart:hover{
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
     .cart-head{
-        padding:10px 12px;
-        background:#fff7ed; /* orange soft */
-        border-bottom:1px solid #e2e8f0;
-        font-weight:900;
-        color:#0f172a;
+        padding:12px 16px;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        border-bottom:1px solid rgba(99, 102, 241, 0.2);
+        font-weight:500;
+        color:#ffffff; /* Fixed color - was cutted */
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        position: relative;
+        line-height: 1.2;
     }
-    .cart-body{ padding:12px; }
+    .cart-head::before {
+        content: 'cart';
+        font-size: 9px;
+        background: rgba(255,255,255,0.15);
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-weight: 500;
+        font-family: monospace;
+        margin-right: 2px;
+    }
+    .cart-head::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    }
+    .cart-body{ 
+        padding:18px;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(135deg, #ffffff, #fafbfc);
+        border-top: 1px solid rgba(99, 102, 241, 0.1);
+    }
     .cart-row{
         display:flex;
-        gap:10px;
+        gap:12px;
         align-items:center;
         justify-content:space-between;
-        padding:10px 0;
+        padding:14px 0;
         border-bottom:1px solid #f1f5f9;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        margin-bottom: 4px;
+    }
+    .cart-row:hover{
+        background: rgba(99, 102, 241, 0.05);
+        padding-left: 8px;
+        padding-right: 8px;
+        transform: translateX(4px);
     }
     .cart-row:last-child{ border-bottom:none; }
     .qty{
-        width:90px;
+        width:100px;
+        padding: 8px 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .qty:focus{
+        border-color: #6366f1;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
     
     .modal-btn-cancel, .modal-btn-confirm {
-        padding:10px 16px; 
-        border-radius:10px; 
+        padding:12px 20px; 
+        border-radius:12px; 
         border:none; 
         font-weight:700; 
         cursor:pointer; 
         font-size:14px;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        overflow: hidden;
     }
     .modal-btn-cancel {
-        background:#e2e8f0; 
-        color:#0f172a;
+        background: linear-gradient(135deg, #94a3b8, #6b7280); 
+        color:#ffffff;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
     }
     .modal-btn-cancel:hover {
-        background:#cbd5e1;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0,0,0,.1);
+        background: linear-gradient(135deg, #6b7280, #4b5563);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 6px 20px rgba(107, 114, 128, 0.3);
     }
     .modal-btn-cancel:active {
-        transform: translateY(0);
+        transform: translateY(0) scale(0.98);
     }
     .modal-btn-confirm {
-        background:#2563eb; 
-        color:#fff;
+        background: linear-gradient(135deg, #6366f1, #4f46e5); 
+        color:#ffffff;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
     }
     .modal-btn-confirm:hover {
-        background:rgba(37,99,235,.9);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(37,99,235,.2);
+        background: linear-gradient(135deg, #4f46e5, #374151);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
     }
     .modal-btn-confirm:active {
-        transform: translateY(0);
+        transform: translateY(0) scale(0.98);
+    }
+    
+    /* Animations */
+    @keyframes modalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes modalSlideIn {
+        from { 
+            opacity: 0; 
+            transform: translateY(30px) scale(0.95); 
+        }
+        to { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+        }
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
 </style>
 
@@ -275,7 +392,7 @@
         <tr>
             <th style="min-width:120px;">ID No</th>
             <th style="min-width:220px;">Description</th>
-            <th style="min-width:180px;">Category</th>
+            <th style="min-width:110px;">Category</th>
             <th style="min-width:80px;">Unit</th>
             <th style="min-width:120px;">Stock</th>
         </tr>
@@ -283,7 +400,9 @@
             @if($s->stock > 0)
             <tr>
                 <td><b>{{ $s->id_no }}</b></td>
-                <td>{{ $s->description }}</td>                <td>{{ $s->category?->name ?? 'Unknown' }}</td>                <td>{{ $s->unit }}</td>
+                <td>{{ $s->description }}</td>
+                <td>{{ $s->category?->name ?? 'Unknown' }}</td>
+                <td>{{ $s->unit }}</td>
                 <td>
                     @if($s->stock >= 50)
                         <span class="pill ok">Available</span>
@@ -315,7 +434,7 @@
         <div class="modal-head">
             <div style="flex:1;">
                 <div class="modal-title">Create Request (Multiple Items)</div>
-                <div class="muted">Search items, add to list, set quantities, then submit. <button class="btn-ghost" type="button" onclick="closeReqModal()" style="position:absolute; top:14px; right:16px; background:none; border:none; color:#0f172a; font-size:18px; padding:0; width:24px; height:24px; display:flex; align-items:center; justify-content:center;">✕</button></div>
+                <div style="color: rgba(255,255,255,0.9); font-size: 14px; font-weight: 500; margin-top: 4px;">Search items, add to list, set quantities, then submit. <button class="btn-ghost" type="button" onclick="closeReqModal()" style="position:absolute; top:14px; right:16px; background:none; border:none; color:#ffffff; font-size:18px; padding:0; width:24px; height:24px; display:flex; align-items:center; justify-content:center;">×</button></div>
                  
             </div>
            
@@ -338,11 +457,36 @@
             <div class="modal-body">
                 {{-- LEFT: search & add --}}
                 <div>
-                    <div class="field">
-                        <label><b>Office</b></label>
-                        <div class="muted">{{ Auth::user()->office ?? '-' }}</div>
+                    <div class="field" style="align-items: flex-start;">
+                        <label style="margin-bottom: 4px;"><b>Office</b></label>
+                        <div class="muted" style="margin-top: 0;">{{ Auth::user()->office ?? '-' }}</div>
                         <input type="hidden" name="office" value="{{ Auth::user()->office ?? '' }}">
                     </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                    <div class="field">
+                        <label><b>Requesting Member (Optional)</b></label>
+                        <select name="member_id" style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:10px; font-size:13px; background:#ffffff;">
+                            <option value="">-- Select Member (Optional) --</option>
+                            @if(auth()->user()->role === 'client')
+                                @php
+                                    $clientMembers = \App\Models\ClientMember::where('client_id', auth()->id())->get();
+                                @endphp
+                                @foreach($clientMembers as $member)
+                                    <option value="{{ $member->id }}">{{ $member->name }} ({{ $member->email }})</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <!-- <div class="muted" style="font-size:11px; margin-top:4px;">Select a member if this request is on behalf of someone else.</div> -->
+                    </div>
+
+                    <div class="field">
+                        <label><b>Reason for Request (Optional)</b></label>
+                        <textarea name="reason" placeholder="Please provide a reason for this request..." style="width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:10px; font-size:13px; background:#ffffff; min-height:60px; resize:vertical;">{{ old('reason') }}</textarea>
+                        <!-- <div class="muted" style="font-size:11px; margin-top:4px;">Explain why you need these items (optional but helpful for admin).</div> -->
+                    </div>
+
+                                    </div>
 
                     <div class="field">
                         <label><b>Search Item</b></label>
@@ -350,18 +494,20 @@
                         <div class="muted">Tip: search by ID No or Description.</div>
                     </div>
 
-                    <div style="border:1px solid #e2e8f0; border-radius:14px; overflow:hidden;">
-                        <table style="margin:0;">
-                            <thead>
-                                <tr>
-                                    <th>ID No</th>
-                                    <th>Description</th>
-                                    <th>Stock</th>
-                                    <th style="width:140px;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stockList"></tbody>
-                        </table>
+                    <div style="border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; background: linear-gradient(135deg, #fafbfc, #ffffff);">
+                        <div style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
+                            <table style="margin:0; position: sticky; top: 0; background: linear-gradient(135deg, #fafbfc, #ffffff);">
+                                <thead>
+                                    <tr>
+                                        <th>ID No</th>
+                                        <th>Description</th>
+                                        <th>Stock</th>
+                                        <th style="width:140px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockList"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -483,7 +629,7 @@ function updateQty(stockId, max){
     if (v > max) v = max;
     cart[stockId] = v;
     document.getElementById('qty_'+stockId).value = v;
-    renderHiddenInputs();
+    renderCart();
 }
 
 function clearCart(){
@@ -505,27 +651,62 @@ function renderCart(){
     }
     empty.style.display = 'none';
 
+    // Create table for cart items
+    const table = document.createElement('table');
+    table.style.cssText = 'width: 100%; border-collapse: collapse; margin-bottom:16px; margin-right: 20px;';
+    
+    // Create table header
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th style="padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">ID</th>
+            <th style="padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Description</th>
+            <th style="padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Unit</th>
+            <th style="padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Qty</th>
+            <th style="padding: 8px 12px; border: 1px solid #e2e8f0; background: #f8fafc; text-align: right; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Action</th>
+        </tr>
+    `;
+    
+    const tbody = document.createElement('tbody');
+    let grandTotal = 0;
+
     keys.forEach(k => {
         const stockId = parseInt(k, 10);
         const s = STOCKS.find(x => x.id === stockId);
         if (!s) return;
 
-        const div = document.createElement('div');
-        div.className = 'cart-row';
-        div.innerHTML = `
-            <div style="min-width:0;">
-                <div style="font-weight:900; color:#0f172a;">${escapeHtml(s.id_no)} — ${escapeHtml(s.description)}</div>
-                <div class="muted">Unit: ${escapeHtml(s.unit)} • Max: ${s.stock}</div>
-            </div>
+        const qty = cart[stockId];
+        const total = qty;
+        grandTotal += total;
 
-            <div style="display:flex; gap:10px; align-items:center;">
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #1e293b; font-weight: 600; font-size: 12px;">${escapeHtml(s.id_no)}</td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #475569; font-size: 12px;">${escapeHtml(s.description)}</td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #64748b; font-size: 12px;">${escapeHtml(s.unit)}</td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; text-align: center;">
                 <input class="qty" id="qty_${stockId}" type="number" min="1" max="${s.stock}"
-                       value="${cart[stockId]}" onchange="updateQty(${stockId}, ${s.stock})">
-                <button type="button" class="btn-ghost" onclick="removeFromCart(${stockId})">Remove</button>
-            </div>
+                       value="${qty}" onchange="updateQty(${stockId}, ${s.stock})" 
+                       style="width: 60px; padding: 4px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;">
+            </td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; text-align: right; font-weight: 700; color: #1e293b; font-size: 12px;">${qty}</td>
+            <td style="padding: 10px 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <button type="button" class="btn-ghost" onclick="removeFromCart(${stockId})" 
+                        style="padding: 4px 8px; font-size: 11px; border-radius: 4px;">Remove</button>
+            </td>
         `;
-        rows.appendChild(div);
+        tbody.appendChild(tr);
     });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    rows.appendChild(table);
+
+    // Add grand total
+    const totalDiv = document.createElement('div');
+    totalDiv.style.cssText = 'margin-top:12px; padding:12px; background:linear-gradient(135deg, #f8fafc, #f1f5f9); border:1px solid #e2e8f0; border-radius:8px; text-align:right; font-weight:700; color:#1e293b; font-size: 14px;';
+    totalDiv.innerHTML = `Grand Total: <span style="color: #6366f1; font-weight: 800;">${grandTotal}</span>`;
+    rows.appendChild(totalDiv);
 
     renderHiddenInputs();
 }

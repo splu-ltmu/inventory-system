@@ -6,29 +6,29 @@
             <div>
                 <div class="req-title">
                     Request from <span style="color:#2563eb;">{{ $req->office }}</span>
-                    <span class="muted">•</span>
-                    <span class="muted">{{ $req->client?->name ?? 'Client' }}</span>
-                    <span class="muted">•</span>
-                    <span class="muted">{{ $req->created_at?->format('M d, Y') }}</span>
+                    <span style="color:#000000;">•</span>
+                    <span style="color:#000000;">{{ $req->client?->name ?? 'Client' }}</span>
+                    <span style="color:#000000;">•</span>
+                    <span style="color:#000000;">{{ $req->created_at?->format('M d, Y') }}</span>
                 </div>
 
                 <div class="req-sub">
-                    <span class="muted">Status:</span>
+                    <span style="color:#000000;">Status:</span>
                     <span class="status-pill">{{ strtoupper(str_replace('_',' ', $req->status)) }}</span>
-                    <span class="muted" style="margin-left:10px;">Request ID:</span>
-                    <b>#{{ $req->id }}</b>
+                    <span style="color:#000000; margin-left:10px;">Request ID:</span>
+                    <b style="color:#000000;">#{{ $req->id }}</b>
                 </div>
             </div>
 
             <div class="req-right">
                 Ref. No:
                 <span style="color:#0f172a;">#{{ $req->id }}</span>
-                <div class="muted" style="font-size:12px; font-weight:600; margin-top:4px;">Click to view details</div>
+                <div style="font-size:12px; font-weight:600; margin-top:4px; color:#000000;">Click to view details</div>
             </div>
         </div>
 
         <div id="{{ $rid }}" class="req-body">
-            <div class="muted" style="margin-bottom:10px;">Approve partially by setting Approved Qty per item (0 = rejected item).</div>
+            <!-- <div class="muted" style="margin-bottom:10px;">Approve partially by setting Approved Qty per item (0 = rejected item).</div> -->
 
             <form method="POST" action="{{ route('admin.requests.decision', $req->id) }}">
                 @csrf
@@ -46,12 +46,15 @@
                         @forelse($req->items as $item)
                             <tr>
                                 <td style="text-align:left;">
-                                    <b>{{ $item->stock?->id_no ?? '' }}</b> — {{ $item->stock?->description ?? 'N/A' }}
-                                    <div class="muted" style="font-size:12px;">Unit: {{ $item->stock?->unit ?? '—' }}</div>
+                                    <b style="color:#000000;">{{ $item->stock?->id_no ?? '' }}</b> — {{ $item->stock?->description ?? 'N/A' }}
+                                    <div style="font-size:12px; color:#000000;">
+                                        Unit: {{ $item->stock?->unit ?? '—' }}
+                                        @if(isset($item->stock->price)) • Price: ₱{{ number_format($item->stock->price, 2) }}@endif
+                                    </div>
                                 </td>
 
-                                <td>{{ $item->requested_qty }}</td>
-                                <td>{{ $item->stock?->stock ?? 0 }}</td>
+                                <td style="color:#000000;">{{ $item->requested_qty }}</td>
+                                <td style="color:#000000;">{{ $item->stock?->stock ?? 0 }}</td>
 
                                 <td style="min-width:160px;">
                                     <div style="display:flex; gap:6px; align-items:center;">
@@ -72,7 +75,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="muted">No request items found for this request.</td>
+                                <td colspan="4" style="color:#000000;">No request items found for this request.</td>
                             </tr>
                         @endforelse
                     </table>
@@ -81,7 +84,7 @@
                 @if($req->status !== 'ready_to_receive')
                     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
                         @if($req->status !== 'approved')
-                            <button class="btn-ghost" type="button" onclick="confirmAction(event, null, 'Save Decision', 'Save the approval quantities for this request?', '{{ $req->id }}')">
+                            <button class="btn-ghost" type="button" onclick="confirmAction(event, null, 'Save Decision', 'Save: approval quantities for this request?', '{{ $req->id }}')">
                                 Save Decision
                             </button>
                         @endif

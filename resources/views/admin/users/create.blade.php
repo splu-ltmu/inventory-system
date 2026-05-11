@@ -3,7 +3,6 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'Create New Account';
-  $pageSubtitle = 'Create a new client account.';
 @endphp
 
 @section('sidebar')

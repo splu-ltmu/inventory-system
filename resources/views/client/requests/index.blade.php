@@ -3,29 +3,10 @@
 @php
   $brand = 'Inventory System';
   $pageTitle = 'My Requests';
-  $pageSubtitle = 'See approved items, rejected items, and verification code when ready.';
 @endphp
 
 @section('sidebar')
-    <a href="{{ route('client.dashboard') }}" class="{{ request()->is('client') ? 'active' : '' }}">
-        Dashboard <small>Home</small>
-    </a>
-
-    <a href="{{ route('client.summary') }}" class="{{ request()->is('client/summary*') ? 'active' : '' }}">
-        Summary <small>Overview</small>
-    </a>
-
-    <a href="{{ route('client.stocks') }}" class="{{ request()->is('client/stocks*') ? 'active' : '' }}">
-        Available Stocks <small>Request items</small>
-    </a>
-
-    <a href="{{ route('client.requests') }}" class="{{ request()->is('client/requests*') ? 'active' : '' }}">
-        My Requests <small>Status + Code</small>
-    </a>
-
-    <a href="{{ route('client.account') }}" class="{{ request()->is('client/account*') ? 'active' : '' }}">
-        Account Settings <small>Email & Password</small>
-    </a>
+    @include('client.sidebar')
 @endsection
 
 @section('content')
@@ -219,6 +200,8 @@
         $status = $req->status; // pending / approved / ready_to_receive / rejected / released
         $code = $req->verification_code;
         $rid = 'req-'.$req->id;
+        $requestTotal = $req->items->sum('requested_qty');
+        $approvedTotal = $req->items->sum('approved_qty');
     @endphp
 
     <div class="card">
@@ -227,7 +210,17 @@
                 <div class="title">
                     Request from <span style="color:#2563eb;">{{ $req->office }}</span>
                     <span class="muted">•</span>
+                    @if($req->member)
+                        <span style="color:#059669;">Member: {{ $req->member->name }}</span>
+                        <span class="muted">•</span>
+                    @endif
                     <span class="muted">{{ $req->created_at?->format('M d, Y') }}</span>
+                </div>
+                <div style="margin-top:4px; font-size:12px; color:#475569;">
+                    Total requested: {{ $requestTotal }}
+                    @if($status !== 'pending')
+                        • Approved total: {{ $approvedTotal }}
+                    @endif
                 </div>
 
                 <div style="margin-top:6px;">
@@ -246,6 +239,15 @@
                         <span class="pill">{{ strtoupper(str_replace('_',' ', $status)) }}</span>
                     @endif
                 </div>
+
+                @if($req->reason)
+                    <div style="margin-top:8px;">
+                        <span class="muted">Reason:</span>
+                        <div style="margin-top:4px; padding:6px 10px; background:linear-gradient(135deg, #f8fafc, #f1f5f9); border:1px solid #e2e8f0; border-radius:6px; color:#475569; font-size:12px; line-height:1.4;">
+                            {{ $req->reason }}
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <div style="text-align:right; white-space:nowrap;">
@@ -265,56 +267,61 @@
         </div>
 
         <div id="{{ $rid }}" class="card-body">
-            <div style="overflow:auto; border-radius:14px; border:1px solid #e2e8f0;">
-                <table>
-                    <tr>
-                        <th style="min-width:260px;">Item</th>
-                        <th style="min-width:120px;">Requested</th>
-                        <th style="min-width:120px;">Approved</th>
-                        <th style="min-width:140px;">Result</th>
+            <div style="overflow-x:auto; border-radius:16px; box-shadow:0 8px 25px rgba(59,130,246,0.15); background:linear-gradient(135deg, #eff6ff, #dbeafe);">
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr style="background:linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                        <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px;">Item</th>
+                        <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px;">Requested</th>
+                        <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px;">Approved</th>
+                        <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px;">Result</th>
                     </tr>
 
                     @forelse($req->items as $item)
                         @php
                             $requested = (int) $item->requested_qty;
-                            $approved = $item->approved_qty; // can be null
+                            $approved = (int)($item->approved_qty ?? 0);
                         @endphp
 
-                        <tr>
-                            <td>
-                                <b>{{ $item->stock?->id_no ?? '' }}</b> — {{ $item->stock?->description ?? 'N/A' }}
-                                <div class="muted">Unit: {{ $item->stock?->unit ?? '—' }}</div>
+                        <tr style="border-bottom:1px solid #e0e7ff; background:linear-gradient(135deg, #ffffff, #f8fafc);">
+                            <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
+                                <div style="font-weight:700; color:#1e40af; font-size:14px;">{{ $item->stock?->id_no ?? '' }}</div>
+                                <div style="color:#64748b; font-size:11px; margin-top:3px;">{{ $item->stock?->description ?? 'N/A' }} • Unit: {{ $item->stock?->unit ?? '—' }}</div>
+                                @if($item->rejection_reason && $item->status === 'rejected')
+                                    <div style="margin-top:6px; padding:6px 8px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; color:#991b1b; font-size:11px; line-height:1.3;">
+                                        <strong>Rejection Reason:</strong> {{ $item->rejection_reason }}
+                                    </div>
+                                @endif
                             </td>
 
-                            <td>{{ $requested }}</td>
+                            <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#475569; font-weight:600;">{{ $requested }}</td>
 
                             {{-- Approved column --}}
-                            <td>
+                            <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#475569; font-weight:600;">
                                 @if($status === 'pending')
-                                    —
+                                    <span style="color:#64748b;">—</span>
                                 @else
-                                    {{ (int)($approved ?? 0) }}
+                                    <span style="color:#1e40af; font-weight:700;">{{ $approved }}</span>
                                 @endif
                             </td>
 
                             {{-- Result column --}}
-                            <td>
+                            <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
                                 @if($status === 'pending')
-                                    <span class="pill pending">PENDING</span>
+                                    <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8;">PENDING</span>
                                 @elseif($status === 'cancelled')
-                                    <span class="pill rejected">CANCELLED</span>
+                                    <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #fecaca; background:#fef2f2; color:#991b1b;">CANCELLED</span>
                                 @else
-                                    @if((int)($approved ?? 0) > 0)
-                                        <span class="pill approved">APPROVED</span>
+                                    @if($approved > 0)
+                                        <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #bbf7d0; background:#ecfdf5; color:#065f46;">APPROVED</span>
                                     @else
-                                        <span class="pill rejected">REJECTED</span>
+                                        <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #fecaca; background:#fef2f2; color:#991b1b;">REJECTED</span>
                                     @endif
                                 @endif
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="4" class="muted">No request items found.</td>
+                        <tr style="background:linear-gradient(135deg, #f8fafc, #f1f5f9);">
+                            <td colspan="6" style="padding:20px 10px; text-align:center; color:#64748b; font-size:14px;">No request items found.</td>
                         </tr>
                     @endforelse
                 </table>

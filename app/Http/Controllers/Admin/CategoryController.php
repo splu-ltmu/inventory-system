@@ -28,6 +28,13 @@ class CategoryController extends Controller
 
         Category::create($request->only('name', 'code'));
 
+        // Check if request is AJAX (from modal)
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => 'Category created successfully.'
+            ]);
+        }
+
         // stay on the create page so user can add more if needed
         return redirect()->route('categories.create')->with('success', 'Category created successfully.');
     }

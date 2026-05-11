@@ -103,27 +103,6 @@
             display: none;
         }
 
-        /* Stack category cell with button side-by-side on mobile */
-        td.category-cell {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
-        }
-
-        td.category-cell .category-label {
-            flex: 1;
-            word-break: break-word;
-            min-width: 0;
-        }
-
-        td.category-cell .btn-link {
-            padding: 6px 8px;
-            font-size: 12px;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
         .pill {
             font-size: 11px;
             padding: 3px 8px;
@@ -142,11 +121,51 @@
         }
 
         /* On very small screens, simplify the modal */
-        #assignCategoryModal > div {
+        #editStockModal > div {
             width: 90% !important;
             max-width: 100%;
             margin: 0 auto;
         }
+    }
+    
+    /* Add New Stock button hover effects */
+    .btn-link:hover{ 
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+        color: #ffffff !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 8px 20px rgba(59,130,246,0.3) !important;
+        border-color: rgba(59,130,246,0.5) !important;
+    }
+    .btn-link:hover::after{ left:100% !important; }
+    .btn-link:active{
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(59,130,246,0.2) !important;
+    }
+    
+    /* Stock modal button hover effects */
+    .modal-btn-primary:hover{
+        background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 8px 20px rgba(59,130,246,0.3) !important;
+        border-color: rgba(59,130,246,0.5) !important;
+    }
+    .modal-btn-primary:hover::after{ left:100% !important; }
+    .modal-btn-primary:active{
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(59,130,246,0.2) !important;
+    }
+    
+    .modal-btn-secondary:hover{
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 16px rgba(59,130,246,0.15) !important;
+        border-color: rgba(59,130,246,0.3) !important;
+        color: #374151 !important;
+    }
+    .modal-btn-secondary:hover::after{ left:100% !important; }
+    .modal-btn-secondary:active{
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(59,130,246,0.1) !important;
     }
 </style>
 
@@ -174,18 +193,19 @@
         </select>
     </div>
 
-    <a class="btn-link" href="{{ route('stocks.create') }}">Add New Stock</a>
+    <a class="btn-link" href="#" onclick="openStockModal()">Add New Stock</a>
 </div>
 
-<div class="table-wrap">
-    <table>
+<div style="overflow-x:auto; border-radius:16px; box-shadow:0 8px 25px rgba(59,130,246,0.15); background:linear-gradient(135deg, #eff6ff, #dbeafe);">
+    <table style="width:100%; border-collapse:collapse;">
         <thead>
-            <tr>
-                <th style="min-width:110px;">ID No</th>
-                <th style="min-width:220px;">Description</th>
-                <th style="min-width:200px;">Category</th>
-                <th style="min-width:80px;">Unit</th>
-                <th style="min-width:90px;">Stock</th>
+            <tr style="background:linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px; min-width:110px;">ID No</th>
+                <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px; min-width:220px;">Description</th>
+                <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px; min-width:200px;">Category</th>
+                <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px; min-width:80px;">Unit</th>
+                <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px; min-width:90px;">Stock</th>
+                <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#ffffff; font-size:12px; min-width:80px;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -195,192 +215,236 @@
                     $desc = $s->description ?? $s->name ?? '';
                     $stockVal = $s->stock ?? 0;
                 @endphp
-                <tr data-id="{{ strtolower($s->id_no ?? $s->id) }}" data-desc="{{ strtolower($desc) }}" data-cat="{{ strtolower($cat) }}" data-stock="{{ $stockVal }}">
-                    <td>{{ $s->id_no ?? $s->id }}</td>
-                    <td>{{ $desc ?: '—' }}</td>
-                    <td class="muted category-cell" data-stock-id="{{ $s->id }}" onclick="openAssignModal({{ $s->id }}, @json($cat))" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                        <span class="category-label">{{ $cat ?: 'Unknown' }}</span>
-                        <div style="margin-left:auto;">
-                            <button type="button" class="btn-link" style="padding:4px 6px;" onclick="openAssignModal({{ $s->id }}, @json($cat))">{{ $cat ? 'Change' : 'Assign' }}</button>
-                        </div>
+                <tr style="border-bottom:1px solid #e0e7ff; background:linear-gradient(135deg, #ffffff, #f8fafc);" data-stock-id="{{ $s->id }}" data-id="{{ strtolower($s->id_no ?? $s->id) }}" data-desc="{{ strtolower($desc) }}" data-cat="{{ strtolower($cat) }}" data-stock="{{ $stockVal }}">
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
+                        <div style="font-weight:700; color:#1e40af; font-size:14px;">{{ $s->id_no ?? $s->id }}</div>
                     </td>
-                    <td>{{ $s->unit ?? '—' }}</td>
-                    <td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
+                        <div style="color:#64748b; font-size:14px;">{{ $desc ?: 'â' }}</div>
+                    </td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#64748b; font-size:14px;">{{ $cat ?: 'Unknown' }}</td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#475569; font-weight:600;">{{ $s->unit ?? 'â' }}</td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
                         @if($stockVal >= 50)
-                            <span class="pill green">{{ $stockVal }} available</span>
+                            <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #bbf7d0; background:#ecfdf5; color:#059669;">{{ $stockVal }} available</span>
                         @elseif($stockVal > 0 && $stockVal <= 49)
-                            <span class="pill orange">{{ $stockVal }} available</span>
+                            <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #fed7aa; background:#fff7ed; color:#ea580c;">{{ $stockVal }} available</span>
                         @else
-                            <span class="pill red">Out of stock</span>
+                            <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #fecaca; background:#fef2f2; color:#dc2626;">Out of stock</span>
                         @endif
+                    </td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
+                        <button type="button" style="padding:8px 12px; border-radius:8px; border:1px solid #3b82f6; background:#3b82f6; color:#ffffff; font-weight:700; cursor:pointer; transition:all 0.3s ease;" onclick="openEditModal({{ $s->id }})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
                     </td>
                 </tr>
             @empty
-                <tr>
-                    <td colspan="5" style="color:var(--muted);">No stocks found.</td>
+                <tr style="background:linear-gradient(135deg, #f8fafc, #f1f5f9);">
+                    <td colspan="6" style="padding:20px 10px; text-align:center; color:#64748b; font-size:14px;">No stocks found.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 </div>
 
-<!-- Assign Category Modal -->
-<div id="assignCategoryModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10000; align-items:center; justify-content:center;">
-    <div style="background:#fff; border-radius:12px; padding:18px; width:480px; max-width:95%; box-shadow:0 18px 40px rgba(2,6,23,.2);">
-        <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:900;">Assign Category</h3>
-        <div style="margin-bottom:8px; color:var(--muted);">Select an existing category or create a new one.</div>
-
-        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
-            <select id="assignCategorySelect" style="padding:8px; border:1px solid var(--line); border-radius:8px;">
-                <option value="">-- select category --</option>
-                @foreach($allCategories as $catOpt)
-                    <option value="{{ $catOpt->id }}">{{ $catOpt->name }}</option>
-                @endforeach
-            </select>
-
-            <div class="field">
-                <label style="margin-bottom:6px; font-weight:700;">Description</label>
-                <input id="assignDescriptionInput" placeholder="Edit stock description (optional)" style="padding:8px; border:1px solid var(--line); border-radius:8px;">
+<!-- Edit Stock Modal -->
+<div id="editStockModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:10000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg, #ffffff, #f8fafc); border-radius:16px; padding:24px; width:520px; max-width:95%; box-shadow:0 20px 50px rgba(59,130,246,0.25); border:1px solid #e2e8f0; animation:modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <!-- Modal Header -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid #e2e8f0;">
+            <div style="width:40px; height:40px; background:linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
             </div>
-
-
-            <div id="assignFeedback" style="color:var(--muted); font-size:13px;"></div>
+            <div style="flex:1;">
+                <h3 style="margin:0; font-size:18px; font-weight:700; color:#1e293b;">Edit Stock</h3>
+                <div style="color:#64748b; font-size:13px; margin-top:2px;">Update stock information</div>
+            </div>
+            <button type="button" onclick="closeEditModal()" style="width:32px; height:32px; border-radius:8px; border:1px solid #e2e8f0; background:#ffffff; color:#64748b; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
         </div>
 
-        <div style="display:flex; gap:8px; justify-content:flex-end;">
-            <button class="btn-ghost" type="button" onclick="closeAssignModal()">Cancel</button>
-            <button class="btn" type="button" onclick="saveAssignCategory()">Save</button>
+        <!-- Modal Body -->
+        <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:20px;">
+            <div class="field">
+                <label style="display:block; margin-bottom:6px; font-weight:600; color:#374151; font-size:14px;">Description</label>
+                <input id="editDescriptionInput" placeholder="Enter stock description" style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:10px; font-size:14px; transition:all 0.3s ease; background:#ffffff;">
+            </div>
+
+            <div class="field">
+                <label style="display:block; margin-bottom:6px; font-weight:600; color:#374151; font-size:14px;">Unit</label>
+                <input id="editUnitInput" placeholder="e.g., pcs, kg, liters" style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:10px; font-size:14px; transition:all 0.3s ease; background:#ffffff;">
+            </div>
+
+            <div class="field">
+                <label style="display:block; margin-bottom:6px; font-weight:600; color:#374151; font-size:14px;">Category</label>
+                <select id="editCategorySelect" style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:10px; font-size:14px; transition:all 0.3s ease; background:#ffffff; cursor:pointer;">
+                    <option value="">Select a category</option>
+                    @foreach($allCategories as $catOpt)
+                        <option value="{{ $catOpt->id }}">{{ $catOpt->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="editFeedback" style="padding:8px 12px; border-radius:8px; font-size:13px; display:none;"></div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" onclick="closeEditModal()" style="padding:10px 20px; border-radius:10px; border:2px solid #e2e8f0; background:#ffffff; color:#64748b; font-weight:600; cursor:pointer; transition:all 0.3s ease; font-size:14px;">Cancel</button>
+            <button type="button" onclick="saveEditStock()" style="padding:10px 20px; border-radius:10px; border:2px solid #3b82f6; background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:#ffffff; font-weight:700; cursor:pointer; transition:all 0.3s ease; font-size:14px; box-shadow:0 4px 12px rgba(59,130,246,0.3);">Save Changes</button>
         </div>
     </div>
 </div>
 
+<!-- Add modal animation -->
+<style>
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+#editStockModal input:focus,
+#editStockModal select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+#editStockModal input:hover,
+#editStockModal select:hover {
+    border-color: #cbd5e1;
+}
+
+#editStockModal button:hover {
+    transform: translateY(-1px);
+}
+
+#editStockModal button:active {
+    transform: translateY(0);
+}
+
+#editFeedback.success {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    color: #059669;
+    border: 1px solid #bbf7d0;
+    display: block;
+}
+
+#editFeedback.error {
+    background: linear-gradient(135deg, #fef2f2, #fecaca);
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    display: block;
+}
+</style>
+
 <script>
 const CSRF_TOKEN = '{{ csrf_token() }}';
-let _assignStockId = null;
+let _editStockId = null;
 
-function openAssignModal(stockId, currentCategory){
-    _assignStockId = stockId;
-    const modal = document.getElementById('assignCategoryModal');
+function openEditModal(stockId){
+    _editStockId = stockId;
+    const modal = document.getElementById('editStockModal');
     if (!modal) {
-        console.error('assignCategoryModal element not found on page');
-        alert('Assign modal is not loaded — please refresh the page.');
+        console.error('editStockModal element not found on page');
+        alert('Edit modal is not loaded — please refresh the page.');
         return;
     }
 
-    const select = document.getElementById('assignCategorySelect');
-    // try to preselect the existing category by visible name (falls back to empty)
-    if (select) {
+    // Populate fields from the row
+    const row = document.querySelector(`tr[data-stock-id='${stockId}']`);
+    if (row) {
+        const cells = row.querySelectorAll('td');
+        const desc = cells[1]?.textContent?.trim() || '';
+        const category = cells[2]?.textContent?.trim() || '';
+        const unit = cells[3]?.textContent?.trim() || '';
+
+        document.getElementById('editDescriptionInput').value = desc;
+        document.getElementById('editUnitInput').value = unit;
+
+        // Select category
+        const select = document.getElementById('editCategorySelect');
         select.value = '';
-        if (currentCategory) {
-            const wanted = ('' + currentCategory).trim().toLowerCase();
+        if (category && category !== 'Unknown') {
+            const wanted = category.toLowerCase();
             for (const opt of Array.from(select.options)) {
-                if ((opt.text || '').trim().toLowerCase() === wanted) {
+                if (opt.text.toLowerCase() === wanted) {
                     select.value = opt.value;
                     break;
                 }
             }
         }
-    }
 
-    const descInput = document.getElementById('assignDescriptionInput');
-    // populate description from the row if available
-    try {
-        const td = document.querySelector(`td.category-cell[data-stock-id='${stockId}']`);
-        const row = td?.closest('tr');
-        const descCell = row?.querySelector('td:nth-child(2)');
-        const currentDesc = (descCell?.textContent || '').trim();
-        if (descInput) descInput.value = currentDesc;
-    } catch (err) {
-        if (descInput) descInput.value = '';
+        console.log('Populated fields:', { desc, unit, category });
+    } else {
+        console.error('Row not found for stockId:', stockId);
     }
-
-    const feedback = document.getElementById('assignFeedback');
-    if (feedback) feedback.textContent = currentCategory ? `Current: ${currentCategory}` : 'No category assigned';
 
     modal.style.display = 'flex';
 }
 
-function closeAssignModal(){
-    _assignStockId = null;
-    document.getElementById('assignCategoryModal').style.display = 'none';
+function closeEditModal(){
+    _editStockId = null;
+    document.getElementById('editStockModal').style.display = 'none';
 }
 
-function clearAssignInputs(){
-    const select = document.getElementById('assignCategorySelect');
-    const desc = document.getElementById('assignDescriptionInput');
-    if (select) select.value = '';
-    if (desc) desc.value = '';
-}
-
-async function saveAssignCategory(){
-    if (!_assignStockId) return;
-    const select = document.getElementById('assignCategorySelect');
-    const categoryId = select.value || null;
-
+async function saveEditStock(){
+    if (!_editStockId) return;
     const payload = new FormData();
+    payload.append('description', document.getElementById('editDescriptionInput').value.trim());
+    payload.append('unit', document.getElementById('editUnitInput').value.trim());
+    const categoryId = document.getElementById('editCategorySelect').value;
     if (categoryId) payload.append('category_id', categoryId);
-    const descVal = (document.getElementById('assignDescriptionInput')?.value || '').trim();
-    if (descVal) payload.append('description', descVal);
     payload.append('_token', CSRF_TOKEN);
+    payload.append('_method', 'PUT');
 
     try {
-        const res = await fetch(`/admin/stocks/${_assignStockId}/assign-category`, {
+        const res = await fetch(`/admin/stocks/${_editStockId}/edit-modal`, {
             method: 'POST',
             body: payload,
             headers: { 'X-CSRF-TOKEN': CSRF_TOKEN }
         });
         const data = await res.json();
         if (res.ok && data.success) {
-            const td = document.querySelector(`td.category-cell[data-stock-id='${_assignStockId}']`);
-            const tr = td?.closest('tr');
-            const newLabel = data.category_name || 'Unknown';
-            if (td) td.innerHTML = `${newLabel} <button type="button" class="btn-link" style="padding:4px 6px; margin-left:8px;" onclick="openAssignModal(${_assignStockId}, ${JSON.stringify(data.category_name)})">Change</button>`;
-            if (tr) {
-                tr.dataset.cat = (data.category_name || '').toLowerCase();
-                // update description cell in the same row if controller returned it
-                if (data.stock_description) {
-                    const descCell = tr.querySelector('td:nth-child(2)');
-                    if (descCell) descCell.textContent = data.stock_description;
-                    tr.dataset.desc = (data.stock_description || '').toLowerCase();
-                }
+            // Update the row
+            const row = document.querySelector(`tr[data-stock-id='${_editStockId}']`);
+            if (row) {
+                const cells = row.querySelectorAll('td');
+                cells[1].textContent = data.stock.description || '—';
+                cells[2].textContent = data.stock.category?.name || 'Unknown';
+                cells[3].textContent = data.stock.unit || '—';
+                row.dataset.desc = (data.stock.description || '').toLowerCase();
+                row.dataset.cat = (data.stock.category?.name || '').toLowerCase();
             }
-            closeAssignModal();
+            closeEditModal();
         } else {
-            document.getElementById('assignFeedback').textContent = data.message || 'Unable to assign category.';
+            document.getElementById('editFeedback').textContent = data.message || 'Unable to update stock.';
         }
     } catch (err) {
-        document.getElementById('assignFeedback').textContent = 'Request failed.';
+        document.getElementById('editFeedback').textContent = 'Request failed.';
     }
 }
 
-// Fallback: delegated click handler so the Change/Assign button always opens the modal
-// (fixes cases where inline handlers are blocked or dynamic DOM updates removed the onclick)
-document.addEventListener('click', function(e) {
-    const clicked = e.target.closest('.category-cell, .category-cell .btn-link');
-    if (!clicked) return;
-    const cell = clicked.classList.contains('category-cell') ? clicked : clicked.closest('.category-cell');
-    if (!cell) return;
-    const stockId = cell.getAttribute('data-stock-id');
-    if (!stockId) return;
-
-    // Get category visible text (exclude the button label)
-    let categoryText = '';
-    // prefer the first text node inside the cell if available
-    for (const node of cell.childNodes) {
-        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) { categoryText = node.textContent.trim(); break; }
-    }
-    if (!categoryText) categoryText = (cell.textContent || '').trim();
-
-    const btn = cell.querySelector('.btn-link');
-    if (btn) {
-        const btnText = btn.textContent.trim();
-        if (categoryText.endsWith(btnText)) {
-            categoryText = categoryText.slice(0, categoryText.length - btnText.length).trim();
-        }
-    }
-
-    openAssignModal(stockId, categoryText || '');
-});
+function number_format(number, decimals) {
+    return parseFloat(number).toFixed(decimals);
+}
 
 const stocksSearch = document.getElementById('stocksSearch');
 const filterCategory = document.getElementById('filterCategory');
@@ -391,7 +455,7 @@ function filterStocks(){
     const cat = filterCategory.value;
     const avail = filterAvailability.value; // "in" or "out" or ""
 
-    document.querySelectorAll('.table-wrap tbody tr[data-id]').forEach(row => {
+    document.querySelectorAll('table tbody tr[data-id]').forEach(row => {
         const id = row.dataset.id || '';
         const desc = row.dataset.desc || '';
         const category = row.dataset.cat || '';
@@ -422,5 +486,197 @@ function filterStocks(){
 stocksSearch && stocksSearch.addEventListener('input', filterStocks);
 filterCategory && filterCategory.addEventListener('change', filterStocks);
 filterAvailability && filterAvailability.addEventListener('change', filterStocks);
+</script>
+
+<!-- Add Stock Modal -->
+<div id="stockModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:linear-gradient(135deg, #ffffff, #f8fafc); border-radius:16px; padding:24px; width:520px; max-width:95%; box-shadow:0 18px 40px rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.1);">
+        <h3 style="margin:0 0 20px 0; font-size:18px; font-weight:800; color:#000000; text-align:center;">Add New Stock</h3>
+        
+        @if($errors->any())
+            <div style="color: var(--red); margin-bottom:16px; padding:12px; background: rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); border-radius:8px;">
+                <ul style="margin:0; padding-left:20px;">
+                    @foreach($errors->all() as $error) <li style="margin:4px 0;">{{ $error }}</li> @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('stocks.store') }}" method="POST" id="stockForm">
+            @csrf
+            
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:8px; color: #000000; font-weight:700; font-size:14px;">Category:</label>
+                <select name="category_id" id="stock_category_id" required style="width:100%; padding:12px 14px; border:2px solid #dbeafe; border-radius:10px; font-size:14px; color:#000000; background:#ffffff; transition:all 0.3s ease; box-shadow:0 1px 3px rgba(59,130,246,.05); outline:none;">
+                    <option value="">-- Choose a category --</option>
+                    @foreach($allCategories as $category)
+                        <option value="{{ $category->id }}" data-code="{{ $category->code ?? '' }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:8px; color: #000000; font-weight:700; font-size:14px;">ID No:</label>
+                <input type="text" name="id_no" id="stock_id_no" value="{{ old('id_no') }}" required readonly style="width:100%; padding:12px 14px; border:2px solid #dbeafe; border-radius:10px; font-size:14px; color:#000000; background:#eff6ff; cursor:not-allowed; box-shadow:0 1px 3px rgba(59,130,246,.05);">
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:8px; color: #000000; font-weight:700; font-size:14px;">Description:</label>
+                <input type="text" name="description" id="stock_description" value="{{ old('description') }}" required style="width:100%; padding:12px 14px; border:2px solid #dbeafe; border-radius:10px; font-size:14px; color:#000000; background:#ffffff; transition:all 0.3s ease; box-shadow:0 1px 3px rgba(59,130,246,.05); outline:none;">
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:8px; color: #000000; font-weight:700; font-size:14px;">Unit:</label>
+                <input type="text" name="unit" id="stock_unit" value="{{ old('unit') }}" required style="width:100%; padding:12px 14px; border:2px solid #dbeafe; border-radius:10px; font-size:14px; color:#000000; background:#ffffff; transition:all 0.3s ease; box-shadow:0 1px 3px rgba(59,130,246,.05); outline:none;">
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:8px; color: #000000; font-weight:700; font-size:14px;">Stock:</label>
+                <input type="number" name="stock" id="stock_stock" value="{{ old('stock', 0) }}" min="0" required style="width:100%; padding:12px 14px; border:2px solid #dbeafe; border-radius:10px; font-size:14px; color:#000000; background:#ffffff; transition:all 0.3s ease; box-shadow:0 1px 3px rgba(59,130,246,.05); outline:none;">
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" name="hidden" id="stock_hidden" value="1" {{ old('hidden') ? 'checked' : '' }} style="width:18px; height:18px; cursor:pointer; accent-color:#3b82f6;">
+                    <label for="stock_hidden" style="margin:0; font-weight:500; cursor:pointer; color: #000000;">Hidden (Admin Only)</label>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:12px;">
+                <button type="submit" class="modal-btn-primary" style="flex:1; padding:12px 20px; border-radius:10px; border:2px solid #3b82f6; background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:#ffffff; font-weight:700; transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow:0 4px 12px rgba(59,130,246,0.2); position:relative; overflow:hidden; transform:translateY(0); pointer-events:auto;">
+                    <span style="position:relative; z-index:1;">Add Stock</span>
+                    <span style="position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2)); transition:left 0.3s ease;"></span>
+                </button>
+                <button type="button" onclick="closeStockModal()" class="modal-btn-secondary" style="flex:1; padding:12px 20px; border-radius:10px; border:2px solid #e2e8f0; background:#ffffff; color:#64748b; font-weight:600; transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow:0 1px 3px rgba(15,23,42,.05); position:relative; overflow:hidden; transform:translateY(0); pointer-events:auto;">
+                    <span style="position:relative; z-index:1;">Cancel</span>
+                    <span style="position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg, transparent, rgba(59,130,246,0.1)); transition:left 0.3s ease;"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openStockModal() {
+    document.getElementById('stockModal').style.display = 'flex';
+    document.getElementById('stock_category_id').focus();
+}
+
+function closeStockModal() {
+    document.getElementById('stockModal').style.display = 'none';
+    document.getElementById('stockForm').reset();
+    // Clear any existing error messages
+    const existingErrors = document.querySelector('.error-message');
+    if (existingErrors) {
+        existingErrors.remove();
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('stockModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeStockModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('stockModal').style.display === 'flex') {
+        closeStockModal();
+    }
+});
+
+// Handle form submission via AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    const stockForm = document.getElementById('stockForm');
+    
+    stockForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        // Remove any existing error messages
+        const existingErrors = document.querySelectorAll('.error-message');
+        existingErrors.forEach(error => error.remove());
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success-message';
+                successDiv.style.cssText = 'color: #166534; margin-bottom:16px; padding:12px; background: rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px;';
+                successDiv.textContent = data.success;
+                
+                // Insert after the h3 title
+                const title = document.querySelector('#stockModal h3');
+                title.parentNode.insertBefore(successDiv, title.nextSibling);
+                
+                // Close modal and reload after 1.5 seconds
+                setTimeout(() => {
+                    closeStockModal();
+                    location.reload();
+                }, 1500);
+            } else if (data.errors) {
+                // Show validation errors
+                let errorHtml = '<div class="error-message" style="color: var(--red); margin-bottom:16px; padding:12px; background: rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px;"><ul style="margin:0; padding-left:20px;">';
+                Object.values(data.errors).flat().forEach(error => {
+                    errorHtml += '<li style="margin:4px 0;">' + error + '</li>';
+                });
+                errorHtml += '</ul></div>';
+                
+                // Insert after the h3 title
+                const title = document.querySelector('#stockModal h3');
+                title.insertAdjacentHTML('afterend', errorHtml);
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+            // Show generic error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.style.cssText = 'color: var(--red); margin-bottom:16px; padding:12px; background: rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px;';
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            
+            const title = document.querySelector('#stockModal h3');
+            title.parentNode.insertBefore(errorDiv, title.nextSibling);
+        });
+    });
+
+    // Category change event for auto-generating ID
+    const categorySelect = document.getElementById('stock_category_id');
+    const idNoInput = document.getElementById('stock_id_no');
+
+    categorySelect.addEventListener('change', async function() {
+        const categoryId = this.value;
+        
+        if (!categoryId) {
+            idNoInput.value = '';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/stocks/generate-id/${categoryId}`);
+            const data = await response.json();
+            
+            if (response.ok && data.id_no) {
+                idNoInput.value = data.id_no;
+            } else {
+                idNoInput.value = '';
+                alert(data.error || 'Error generating ID');
+            }
+        } catch (error) {
+            console.error('Error generating ID:', error);
+            idNoInput.value = '';
+        }
+    });
+});
 </script>
 @endsection

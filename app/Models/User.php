@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\ClientSubaccount;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -23,6 +24,7 @@ class User extends Authenticatable
         'password',
         'role',
         'office',
+        'parent_client_id',
     ];
 
     /**
@@ -46,5 +48,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function subaccounts()
+    {
+        return $this->hasMany(ClientSubaccount::class, 'client_user_id');
+    }
+
+    public function subaccount()
+    {
+        return $this->hasOne(ClientSubaccount::class, 'user_id');
     }
 }

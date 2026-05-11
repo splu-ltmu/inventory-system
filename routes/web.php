@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\InboundController;
 use App\Http\Controllers\Admin\OutboundController;
 use App\Http\Controllers\Admin\RequestController as AdminRequestController;
 use App\Http\Controllers\Admin\PasswordResetController as AdminPasswordResetController;
+use App\Http\Controllers\Admin\NotificationPreferenceController;
 use App\Http\Controllers\Admin\UserManagementController;
 
 /*
@@ -30,10 +31,14 @@ use App\Http\Controllers\Admin\UserManagementController;
 | CLIENT CONTROLLERS
 |--------------------------------------------------------------------------
 */
+use App\Http\Controllers\Client\AccountController;
 use App\Http\Controllers\Client\ClientDashboardController;
 use App\Http\Controllers\Client\StockController as ClientStockController;
 use App\Http\Controllers\Client\ClientRequestController;
-use App\Http\Controllers\Client\AccountController;
+use App\Http\Controllers\Client\ClientOutboundController;
+use App\Http\Controllers\Client\ClientNotificationController;
+use App\Http\Controllers\Client\ClientNotificationPreferenceController;
+use App\Http\Controllers\Client\ClientSubaccountController;
 use App\Http\Controllers\Client\PasswordResetController as ClientPasswordResetController;
 
 /*
@@ -87,15 +92,21 @@ Route::prefix('admin')
         // AJAX endpoint for monthly chart analytics
         Route::get('/dashboard/chart-data', [AdminDashboardController::class, 'chartData'])->name('admin.dashboard.chartdata');
 
+        // Client monitoring (inventory + members)
+        Route::get('/client-monitoring', [AdminDashboardController::class, 'clientMonitoring'])->name('admin.client.monitoring');
+
         Route::resource('categories', CategoryController::class);
         Route::resource('stocks', AdminStockController::class);
         Route::get('/stocks/generate-id/{categoryId}', [AdminStockController::class, 'generateId'])->name('stocks.generateId');
         Route::post('/stocks/{stock}/assign-category', [AdminStockController::class, 'assignCategory'])->name('stocks.assignCategory');
+        Route::put('/stocks/{stock}/edit-modal', [AdminStockController::class, 'editModal'])->name('stocks.editModal');
         Route::get('/inbound/template', [InboundController::class, 'template'])->name('inbound.template');
         Route::post('/inbound/import', [InboundController::class, 'import'])->name('inbound.import');
         Route::get('/inbound/suggestions', [InboundController::class, 'suggestions'])->name('inbound.suggestions');
         Route::resource('inbound', InboundController::class);
         Route::resource('outbound', OutboundController::class);
+        Route::get('/outbound/search-recipients', [OutboundController::class, 'searchRecipients'])
+            ->name('outbound.search-recipients');
 
         /*
         |--------------------------------------------------------------------------
@@ -126,9 +137,19 @@ Route::prefix('admin')
         Route::get('/notifications', [AdminDashboardController::class, 'notifications'])
             ->name('admin.notifications');
 
-        // Notifications counts (AJAX)
-        Route::get('/notifications/counts', [AdminDashboardController::class, 'counts'])
+        // Notification preferences
+        Route::get('/notification-preferences', [NotificationPreferenceController::class, 'index'])
+            ->name('admin.notification-preferences.index');
+        Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update'])
+            ->name('admin.notification-preferences.update');
+        Route::get('/notifications/counts', [NotificationPreferenceController::class, 'getFilteredCounts'])
             ->name('admin.notifications.counts');
+
+        // Notification actions
+        Route::post('/notifications/{id}/read', [AdminDashboardController::class, 'markNotificationAsRead'])
+            ->name('admin.notifications.read');
+        Route::post('/notifications/read-all', [AdminDashboardController::class, 'markAllNotificationsAsRead'])
+            ->name('admin.notifications.readAll');
 
         // ✅ ALIAS name (so route('admin.requests') also works)
         Route::get('/requests-alias', function () {
@@ -174,6 +195,10 @@ Route::prefix('client')
         // Client summary/overview page
         Route::get('/summary', [ClientDashboardController::class, 'summary'])->name('client.summary');
 
+        // Client inventory page
+        Route::get('/inventory', [ClientStockController::class, 'inventory'])->name('client.inventory');
+        Route::post('/inventory/deduct', [ClientStockController::class, 'deduct'])->name('client.inventory.deduct');
+
         Route::get('/stocks', [ClientStockController::class, 'index'])->name('client.stocks');
 
         // ✅ Multi item request submit
@@ -185,8 +210,38 @@ Route::prefix('client')
         // ✅ Cancel pending request
         Route::post('/requests/{id}/cancel', [ClientRequestController::class, 'cancel'])->name('client.requests.cancel');
 
+        // ✅ Client outbound management
+        Route::get('/outbounds', [ClientOutboundController::class, 'index'])->name('client.outbounds.index');
+        Route::get('/outbounds/create', [ClientOutboundController::class, 'create'])->name('client.outbounds.create');
+        Route::post('/outbounds', [ClientOutboundController::class, 'store'])->name('client.outbounds.store');
+        Route::get('/outbounds/{outbound}', [ClientOutboundController::class, 'show'])->name('client.outbounds.show');
+
+        // ✅ Notifications
+        Route::get('/notifications', [ClientNotificationController::class, 'index'])->name('client.notifications');
+        Route::get('/notifications/counts', [ClientNotificationController::class, 'counts'])->name('client.notifications.counts');
+        Route::post('/notifications/{id}/read', [ClientNotificationController::class, 'markAsRead'])->name('client.notifications.read');
+        Route::post('/notifications/read-all', [ClientNotificationController::class, 'markAllAsRead'])->name('client.notifications.readAll');
+
+        // ✅ Notification Preferences
+        Route::get('/notification-preferences', [ClientNotificationPreferenceController::class, 'index'])->name('client.notification-preferences.index');
+        Route::put('/notification-preferences', [ClientNotificationPreferenceController::class, 'update'])->name('client.notification-preferences.update');
+
         // ✅ Account settings
         Route::get('/account', [AccountController::class, 'index'])->name('client.account');
         Route::post('/account/email', [AccountController::class, 'updateEmail'])->name('client.account.updateEmail');
         Route::post('/account/password', [AccountController::class, 'updatePassword'])->name('client.account.updatePassword');
+        Route::post('/account/distribute-to-subaccounts', [AccountController::class, 'distributeToSubaccounts'])->name('client.account.distributeToSubaccounts');
+        Route::get('/account/report/pdf', [AccountController::class, 'generateReportPdf'])->name('client.account.report.pdf');
+        Route::post('/account/members', [AccountController::class, 'storeMember'])->name('client.account.members.store');
+        Route::put('/account/members/{id}', [AccountController::class, 'updateMember'])->name('client.account.members.update');
+        Route::delete('/account/members/{id}', [AccountController::class, 'destroyMember'])->name('client.account.members.destroy');
+        Route::post('/account/distribute-to-member', [AccountController::class, 'distributeToMember'])->name('client.account.distributeToMember');
+        Route::post('/account/deduct-items', [AccountController::class, 'deductItems'])->name('client.account.deductItems');
+        Route::post('/account/subaccounts', [ClientSubaccountController::class, 'store'])->name('client.account.subaccounts.store');
+        Route::get('/account/subaccounts/{subaccount}', [ClientSubaccountController::class, 'show'])->name('client.account.subaccounts.show');
+        Route::post('/account/subaccounts/{subaccount}/members', [ClientSubaccountController::class, 'storeMember'])->name('client.account.subaccounts.members.store');
+        Route::post('/account/subaccounts/{subaccount}/distributions', [ClientSubaccountController::class, 'storeDistribution'])->name('client.account.subaccounts.distributions.store');
+        Route::put('/account/subaccounts/{subaccount}/distributions/{distribution}', [ClientSubaccountController::class, 'updateDistribution'])->name('client.account.subaccounts.distributions.update');
+        Route::delete('/account/subaccounts/{subaccount}/distributions/{distribution}', [ClientSubaccountController::class, 'destroyDistribution'])->name('client.account.subaccounts.distributions.destroy');
+        Route::post('/account/subaccounts/{subaccount}/allocations/{allocation}/update-used', [ClientSubaccountController::class, 'updateUsedQty'])->name('client.account.subaccounts.allocations.updateUsed');
     });

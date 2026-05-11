@@ -13,7 +13,7 @@ class ClientRequestController extends Controller
 {
     public function index()
     {
-        $requests = StockRequest::with(['items.stock'])
+        $requests = StockRequest::with(['member', 'items.stock'])
             ->where('client_id', Auth::id())
             ->latest()
             ->get();
@@ -24,8 +24,10 @@ class ClientRequestController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'items'  => ['required', 'array', 'min:1'], // items[stockId] = qty
-            'items.*'=> ['required', 'integer', 'min:1'],
+            'items'     => ['required', 'array', 'min:1'], // items[stockId] = qty
+            'items.*'    => ['required', 'integer', 'min:1'],
+            'member_id'  => ['nullable', 'integer', 'exists:client_members,id'],
+            'reason'     => ['nullable', 'string', 'max:1000'],
         ]);
 
         // Prepare and validate items first (prevent creating empty header)
@@ -53,10 +55,12 @@ class ClientRequestController extends Controller
         $office = Auth::user()->office ?? $request->input('office', null);
 
         // Create request + items inside a transaction
-        \DB::transaction(function () use ($prepared, $office, &$stockRequest) {
+        \DB::transaction(function () use ($prepared, $office, $data, &$stockRequest) {
             $stockRequest = StockRequest::create([
                 'client_id' => Auth::id(),
+                'member_id' => $data['member_id'] ?? null,
                 'office' => $office,
+                'reason' => $data['reason'] ?? null,
                 'status' => 'pending',
                 'verification_code' => null,
             ]);

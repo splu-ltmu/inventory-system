@@ -184,7 +184,6 @@
                 <img src="/images/logo.png.png" alt="Logo" style="width: 60px; height: 60px; object-fit: contain;">
                 <div>
                     <div class="title">Admin Inventory System</div>
-                    <div class="sub">Manage categories, stocks, inbound/outbound, and requests.</div>
                 </div>
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
