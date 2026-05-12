@@ -154,7 +154,14 @@
                             <div class="card-sub">Deducted on {{ $deduction->created_at?->format('F j, Y, g:i A') }}</div>
                             <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5;">
                                 <div style="font-size:12px; color:#991b1b; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Deducted</div>
-                                <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;">{{ $deduction->stockRequestItem->stock->description ?? 'Unknown Item' }} ({{ $deduction->deducted_qty }} units)</div>
+                                <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;">
+                                    @if($deduction->stockRequestItem)
+                                        {{ $deduction->stockRequestItem->stock->description ?? 'Unknown Item' }}
+                                    @else
+                                        {{ $deduction->reason ?? 'Direct Request Item' }}
+                                    @endif
+                                    ({{ $deduction->deducted_qty }} units)
+                                </div>
                                 @if($deduction->member)
                                     <div style="font-size:12px; color:#991b1b; margin-top:4px;">Assigned to: {{ $deduction->member->name }}</div>
                                 @endif
@@ -173,10 +180,20 @@
                         <div style="font-weight:700; margin-bottom:12px; color:var(--text); font-size:14px;">Deduction Details</div>
                         <div style="display:grid; gap:8px;">
                             <div style="padding:12px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px;">
-                                <div style="font-weight:600; color:#7f1d1d; margin-bottom:4px;">{{ $deduction->stockRequestItem->stock->description ?? 'Unknown Item' }}</div>
+                                <div style="font-weight:600; color:#7f1d1d; margin-bottom:4px;">
+                                    @if($deduction->stockRequestItem)
+                                        {{ $deduction->stockRequestItem->stock->description ?? 'Unknown Item' }}
+                                    @else
+                                        {{ $deduction->reason ?? 'Direct Request Item' }}
+                                    @endif
+                                </div>
                                 <div style="display:flex; gap:16px; font-size:12px; color:#991b1b;">
-                                    <span><strong>ID:</strong> {{ $deduction->stockRequestItem->stock->id_no ?? 'N/A' }}</span>
-                                    <span><strong>Unit:</strong> {{ $deduction->stockRequestItem->stock->unit ?? 'N/A' }}</span>
+                                    @if($deduction->stockRequestItem)
+                                        <span><strong>ID:</strong> {{ $deduction->stockRequestItem->stock->id_no ?? 'N/A' }}</span>
+                                        <span><strong>Unit:</strong> {{ $deduction->stockRequestItem->stock->unit ?? 'N/A' }}</span>
+                                    @else
+                                        <span><strong>Type:</strong> Direct Request Item</span>
+                                    @endif
                                     <span><strong>Quantity:</strong> {{ $deduction->deducted_qty }}</span>
                                 </div>
                                 @if($deduction->member)

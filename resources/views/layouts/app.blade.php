@@ -884,7 +884,7 @@
     <aside class="sidebar @if(auth()->user()->role === 'client') client-sidebar @endif" id="sidebar">
         <div class="brand">
             <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px;">
-                <img src="/images/brand-logo.png" alt="Logo" style="height: 122; object-fit: contain;">
+                <img src="/images/brand-logo.png" alt="Logo" style="width: 55%; height: 122; object-fit: contain;">
                 <div class="name" style="text-align: center;">{{ $brand ?? 'Inventory System' }}</div>
             </div>
             <div class="role" style="position: relative; text-align: center;">

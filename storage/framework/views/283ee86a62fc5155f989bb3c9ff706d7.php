@@ -1,5 +1,3 @@
-
-
 <?php
   $brand = 'Inventory System';
   $pageTitle = 'Client Portal';
@@ -223,10 +221,24 @@
                 <div style="display:grid; gap:16px;">
                     <?php $__currentLoopData = $clientMembers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $member): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <?php
+                            // Regular distributions
                             $distributionCount = $member->distributions->count();
                             $distributedQty = $member->distributions->sum('distributed_qty');
                             $usedQty = Schema::hasColumn('client_member_distributions', 'used_qty') ? $member->distributions->sum('used_qty') : 0;
-                            $availableQty = $distributedQty - $usedQty;
+                            
+                            // Direct request items (original ones only, not usage records)
+                            $directDeductions = $member->directDeductions->filter(function ($deduction) {
+                                return $deduction->stock_request_item_id === null && !str_contains($deduction->reason ?? '', 'Used from direct request');
+                            });
+                            $directDistributedQty = $directDeductions->sum('deducted_qty');
+                            $directUsedQty = $member->directDeductions->filter(function ($deduction) {
+                                return str_contains($deduction->reason ?? '', 'Used from direct request');
+                            })->sum('deducted_qty');
+                            
+                            // Combined totals
+                            $totalDistributedQty = $distributedQty + $directDistributedQty;
+                            $totalUsedQty = $usedQty + $directUsedQty;
+                            $availableQty = $totalDistributedQty - $totalUsedQty;
                             $totalUsedValue = 0;
                             $totalAvailableValue = 0;
                             
@@ -252,7 +264,7 @@
                                     <div style="display:flex; gap:12px; text-align:right;">
                                         <div style="background:#fef3c7; padding:6px 10px; border-radius:6px;">
                                             <div style="font-size:9px; color:#92400e; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Used</div>
-                                            <div style="font-size:13px; font-weight:700; color:#92400e; margin-top:2px;"><?php echo e($usedQty); ?></div>
+                                            <div style="font-size:13px; font-weight:700; color:#92400e; margin-top:2px;"><?php echo e($totalUsedQty); ?></div>
                                         </div>
                                         <div style="background:#d1fae5; padding:6px 10px; border-radius:6px;">
                                             <div style="font-size:9px; color:#065f46; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Available</div>
@@ -264,7 +276,7 @@
 
                             <!-- Collapsible Items Table -->
                             <div id="content_<?php echo e($memberId); ?>" style="padding:16px; background:#f8fafc; border-top:1px solid #e2e8f0;">
-                                <?php if($member->distributions->count() > 0): ?>
+                                <?php if($member->distributions->count() > 0 || $directDeductions->count() > 0): ?>
                                     <div style="overflow-x:auto; border-radius:12px; box-shadow:0 4px 12px rgba(34,197,94,0.1);">
                                         <table style="width:100%; border-collapse:collapse; font-size:13px;">
                                             <thead>
@@ -292,6 +304,19 @@
                                                         <td style="padding:14px 10px; text-align:center; border-bottom:1px solid #dcfce7; color:#16a34a; font-weight:700;"><?php echo e($distribution->distributed_qty); ?></td>
                                                         <td style="padding:14px 10px; text-align:center; border-bottom:1px solid #dcfce7; color:#059669; font-weight:700; background:linear-gradient(135deg, #ecfdf5, #d1fae5);"><?php echo e($availableQtyItem); ?></td>
                                                         <td style="padding:14px 10px; text-align:center; border-bottom:1px solid #dcfce7; color:#ea580c; font-weight:700; background:linear-gradient(135deg, #fff7ed, #fed7aa);"><?php echo e($usedQtyItem); ?></td>
+                                                    </tr>
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                
+                                                <?php $__currentLoopData = $directDeductions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $deduction): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <tr style="border-bottom:1px solid #dcfce7; background:linear-gradient(135deg, #f0fdf4, #dcfce7);">
+                                                        <td style="padding:14px 10px; border-bottom:1px solid #dcfce7;">
+                                                            <div style="font-weight:700; color:#16a34a; font-size:14px;">Direct</div>
+                                                            <div style="color:#64748b; font-size:11px; margin-top:3px;"><?php echo e($deduction->reason ?? 'Direct Request Item'); ?></div>
+                                                        </td>
+                                                        <td style="padding:14px 10px; border-bottom:1px solid #dcfce7; color:#475569; font-weight:600;">N/A</td>
+                                                        <td style="padding:14px 10px; text-align:center; border-bottom:1px solid #dcfce7; color:#16a34a; font-weight:700;"><?php echo e($deduction->deducted_qty); ?></td>
+                                                        <td style="padding:14px 10px; text-align:center; border-bottom:1px solid #dcfce7; color:#059669; font-weight:700; background:linear-gradient(135deg, #ecfdf5, #d1fae5);"><?php echo e($deduction->deducted_qty); ?></td>
+                                                        <td style="padding:14px 10px; text-align:center; border-bottom:1px solid #dcfce7; color:#ea580c; font-weight:700; background:linear-gradient(135deg, #fff7ed, #fed7aa);">0</td>
                                                     </tr>
                                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             </tbody>

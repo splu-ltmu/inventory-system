@@ -442,25 +442,41 @@ class AdminDashboardController extends Controller
             // Convert back to collection
             $inventoryItems = collect(array_values($stockInventoryMap));
 
-            // Get members and their distributions
+            // Get members and their distributions including direct request items
             $members = ClientMember::where('client_id', $client->id)
-                ->with(['distributions.stockRequestItem.stock'])
+                ->with(['distributions.stockRequestItem.stock', 'directDeductions'])
                 ->get()
                 ->map(function($member) {
+                    // Regular distributions
                     $distributedQty = $member->distributions->sum('distributed_qty');
                     $usedQty = \Illuminate\Support\Facades\Schema::hasColumn('client_member_distributions', 'used_qty') 
                         ? $member->distributions->sum('used_qty') 
                         : 0;
-                    $availableQty = $distributedQty - $usedQty;
-                    $usedValue = $member->distributions->sum('used_qty') ?? 0;
+                    
+                    // Direct request items (original ones only, not usage records)
+                    $directDeductions = $member->directDeductions->filter(function ($deduction) {
+                        return $deduction->stock_request_item_id === null && !str_contains($deduction->reason ?? '', 'Used from direct request');
+                    });
+                    $directDistributedQty = $directDeductions->sum('deducted_qty');
+                    
+                    // Usage from direct request items
+                    $directUsedQty = $member->directDeductions->filter(function ($deduction) {
+                        return str_contains($deduction->reason ?? '', 'Used from direct request');
+                    })->sum('deducted_qty');
+                    
+                    // Combined totals
+                    $totalDistributedQty = $distributedQty + $directDistributedQty;
+                    $totalUsedQty = $usedQty + $directUsedQty;
+                    $availableQty = $totalDistributedQty - $totalUsedQty;
+                    $usedValue = $totalUsedQty;
 
                     return (object)[
                         'id' => $member->id,
                         'name' => $member->name,
                         'email' => $member->email,
-                        'distributed_items' => $distributedQty,
+                        'distributed_items' => $totalDistributedQty,
                         'available_items' => max(0, $availableQty),
-                        'used_items' => $usedQty,
+                        'used_items' => $totalUsedQty,
                         'used_value' => $usedValue
                     ];
                 });

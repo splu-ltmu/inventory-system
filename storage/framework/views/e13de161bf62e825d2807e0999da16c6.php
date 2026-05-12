@@ -1,5 +1,3 @@
-
-
 <?php
   $brand = 'Inventory System';
   $pageTitle = 'Transaction History';
@@ -159,7 +157,16 @@
                             <div class="card-sub">Deducted on <?php echo e($deduction->created_at?->format('F j, Y, g:i A')); ?></div>
                             <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5;">
                                 <div style="font-size:12px; color:#991b1b; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Deducted</div>
-                                <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;"><?php echo e($deduction->stockRequestItem->stock->description ?? 'Unknown Item'); ?> (<?php echo e($deduction->deducted_qty); ?> units)</div>
+                                <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;">
+                                    <?php if($deduction->stockRequestItem): ?>
+                                        <?php echo e($deduction->stockRequestItem->stock->description ?? 'Unknown Item'); ?>
+
+                                    <?php else: ?>
+                                        <?php echo e($deduction->reason ?? 'Direct Request Item'); ?>
+
+                                    <?php endif; ?>
+                                    (<?php echo e($deduction->deducted_qty); ?> units)
+                                </div>
                                 <?php if($deduction->member): ?>
                                     <div style="font-size:12px; color:#991b1b; margin-top:4px;">Assigned to: <?php echo e($deduction->member->name); ?></div>
                                 <?php endif; ?>
@@ -178,10 +185,22 @@
                         <div style="font-weight:700; margin-bottom:12px; color:var(--text); font-size:14px;">Deduction Details</div>
                         <div style="display:grid; gap:8px;">
                             <div style="padding:12px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px;">
-                                <div style="font-weight:600; color:#7f1d1d; margin-bottom:4px;"><?php echo e($deduction->stockRequestItem->stock->description ?? 'Unknown Item'); ?></div>
+                                <div style="font-weight:600; color:#7f1d1d; margin-bottom:4px;">
+                                    <?php if($deduction->stockRequestItem): ?>
+                                        <?php echo e($deduction->stockRequestItem->stock->description ?? 'Unknown Item'); ?>
+
+                                    <?php else: ?>
+                                        <?php echo e($deduction->reason ?? 'Direct Request Item'); ?>
+
+                                    <?php endif; ?>
+                                </div>
                                 <div style="display:flex; gap:16px; font-size:12px; color:#991b1b;">
-                                    <span><strong>ID:</strong> <?php echo e($deduction->stockRequestItem->stock->id_no ?? 'N/A'); ?></span>
-                                    <span><strong>Unit:</strong> <?php echo e($deduction->stockRequestItem->stock->unit ?? 'N/A'); ?></span>
+                                    <?php if($deduction->stockRequestItem): ?>
+                                        <span><strong>ID:</strong> <?php echo e($deduction->stockRequestItem->stock->id_no ?? 'N/A'); ?></span>
+                                        <span><strong>Unit:</strong> <?php echo e($deduction->stockRequestItem->stock->unit ?? 'N/A'); ?></span>
+                                    <?php else: ?>
+                                        <span><strong>Type:</strong> Direct Request Item</span>
+                                    <?php endif; ?>
                                     <span><strong>Quantity:</strong> <?php echo e($deduction->deducted_qty); ?></span>
                                 </div>
                                 <?php if($deduction->member): ?>
