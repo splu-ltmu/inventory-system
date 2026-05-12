@@ -1112,7 +1112,7 @@
                             <tr style="background:linear-gradient(135deg, #3b82f6, #1d4ed8);">
                                 <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#374151; font-size:12px; background:#f8fafc;">Member Name</th>
                                 <th style="padding:12px 10px; text-align:left; border-bottom:2px solid #1e40af; font-weight:700; color:#374151; font-size:12px; background:#f8fafc;">Email</th>
-                                <th style="padding:12px 10px; text-align:right; border-bottom:2px solid #1e40af; font-weight:700; color:#374151; font-size:12px; background:#f8fafc;">Distributed Items</th>
+                                <th style="padding:12px 10px; text-align:right; border-bottom:2px solid #1e40af; font-weight:700; color:#374151; font-size:12px; background:#f8fafc;">Item list</th>
                                 <th style="padding:12px 10px; text-align:right; border-bottom:2px solid #1e40af; font-weight:700; color:#374151; font-size:12px; background:#f8fafc;">Items Left</th>
                                 <th style="padding:12px 10px; text-align:right; border-bottom:2px solid #1e40af; font-weight:700; color:#374151; font-size:12px; background:#f8fafc;">Used Items</th>
                                 <th style="padding:12px 10px; text-align:center; border-bottom:2px solid #1e40af; font-weight:700; color:#374151; font-size:12px; background:#f8fafc;">Actions</th>
@@ -1127,7 +1127,8 @@
                                     <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; font-weight:700; color:#1e40af; font-size:14px;">{{ $memberReport['name'] }}</td>
                                     <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#475569; font-size:13px;">{{ $memberReport['email'] }}</td>
                                     <td style="padding:14px 10px; text-align:right; border-bottom:1px solid #e0e7ff; color:#1e40af; font-weight:700;">
-                                    {{ $memberReport['distributed_items'] }}
+                                    {{-- Number hidden --}}
+                                    {{-- {{ $memberReport['distributed_items'] }} --}}
                                     @if($memberReport['distributed_items'] > 0)
                                         <div style="position:relative; display:inline-block; margin-left:8px;">
                                             <button 
@@ -1137,7 +1138,7 @@
                                                 onmouseover="this.style.background='#f1f5f9'"
                                                 onmouseout="this.style.background='none'"
                                             >
-                                                ⋯
+                                                show
                                             </button>
                                         </div>
                                     @endif
@@ -1327,6 +1328,19 @@
                     foreach($currentMember->directDeductions as $deduction) {
                         if($deduction->stock_request_item_id === null) { // Only direct request items
                             $itemName = $deduction->reason ?? 'Direct Request Item';
+                            
+                            // Skip the specific item that needs to be removed
+                            if($itemName === 'Used from direct request - Member distribution - Binder Arch Folder / Document File - Cover, Blue') {
+                                continue;
+                            }
+                            
+                            // Clean up item name by removing prefixes
+                            if(str_contains($itemName, '"Member distribution" - ')) {
+                                $itemName = str_replace('"Member distribution" - ', '', $itemName);
+                            }
+                            if(str_contains($itemName, 'Member distribution - ')) {
+                                $itemName = str_replace('Member distribution - ', '', $itemName);
+                            }
                             
                             if($allItems->has($itemName)) {
                                 // Update existing item
