@@ -208,11 +208,9 @@
                                         <strong>Assigned Member:</strong> <?php echo e($deduction->member->name); ?> (<?php echo e($deduction->member->email); ?>)
                                     </div>
                                 <?php endif; ?>
+                                
                                 <?php if($deduction->reason): ?>
-                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #fca5a5;">
-                                        <strong>Reason:</strong> <?php echo e($deduction->reason); ?>
-
-                                    </div>
+                                    
                                 <?php endif; ?>
                                 <?php if($deduction->received_by): ?>
                                     <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #10b981;">
@@ -246,11 +244,9 @@
                                     <div style="font-size:12px; color:#991b1b; margin-top:4px;">Office: <?php echo e($outbound->urgent_recipient_office); ?></div>
                                 <?php endif; ?>
                             </div>
+                            
                             <?php if($outbound->reason): ?>
-                                <div style="margin-top:8px; padding:6px 10px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
-                                    <div style="font-size:12px; color:#854d0e; font-weight:600;">Reason:</div>
-                                    <div style="font-size:13px; color:#713f12; margin-top:2px;"><?php echo e($outbound->reason); ?></div>
-                                </div>
+                                
                             <?php endif; ?>
                             <div style="margin-top:8px;">
                                 <span style="padding:4px 8px; border-radius:6px; background:#dc2626; color:#fff; font-size:11px; font-weight:700;">URGENT</span>
@@ -284,15 +280,12 @@
                                 <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #fca5a5;">
                                     <strong>Recipient:</strong> <?php echo e($outbound->urgent_recipient_name); ?> <?php if($outbound->urgent_recipient_office): ?>(<?php echo e($outbound->urgent_recipient_office); ?>)<?php endif; ?>
                                 </div>
+                                
                                 <?php if($outbound->reason): ?>
-                                    <div style="margin-top:8px; padding:6px 8px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
-                                        <strong style="color:#854d0e;">Reason:</strong> <?php echo e($outbound->reason); ?>
-
-                                    </div>
+                                    
                                 <?php endif; ?>
-                                <div style="margin-top:8px; padding:6px 8px; background:#fef2f2; border-radius:6px; border:1px solid #fca5a5;">
-                                    <strong style="color:#991b1b;">Note:</strong> This was an urgent outbound request processed immediately.
-                                </div>
+                                
+                                
                             </div>
                         </div>
                     </div>
@@ -353,9 +346,8 @@
                                 <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #6ee7b7;">
                                     <strong>Requested by:</strong> <?php echo e($request->member?->name ?? $request->client?->name); ?> <?php if($request->member?->email): ?>(<?php echo e($request->member->email); ?>)<?php elseif($request->office): ?>(<?php echo e($request->office); ?>)<?php endif; ?>
                                 </div>
-                                <div style="margin-top:8px; padding:6px 8px; background:#ecfdf5; border-radius:6px; border:1px solid #6ee7b7;">
-                                    <strong style="color:#047857;">Note:</strong> This was a direct request from the <?php if($request->member): ?> member <?php else: ?> client/office <?php endif; ?>, not through the regular request process.
-                                </div>
+                                
+                                
                             </div>
                         </div>
                     </div>

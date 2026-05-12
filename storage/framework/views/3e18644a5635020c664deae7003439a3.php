@@ -292,11 +292,9 @@
                             <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;"><?php echo e($urgent->urgent_recipient_name ?? 'Unknown'); ?></div>
                             <div style="font-size:12px; color:#991b1b; margin-top:4px;">Office: <?php echo e($urgent->urgent_recipient_office ?? 'Not specified'); ?></div>
                         </div>
+                        
                         <?php if($urgent->reason): ?>
-                            <div style="margin-top:8px; padding:6px 10px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
-                                <div style="font-size:12px; color:#854d0e; font-weight:600;">Reason:</div>
-                                <div style="font-size:13px; color:#713f12; margin-top:2px;"><?php echo e($urgent->reason); ?></div>
-                            </div>
+                            
                         <?php endif; ?>
                         <div style="margin-top:8px;">
                             <span style="padding:4px 8px; border-radius:6px; background:#dc2626; color:#fff; font-size:11px; font-weight:700;">URGENT</span>
@@ -368,11 +366,9 @@
                                 <div style="font-size:12px; color:#047857; margin-top:4px;">Office: <?php echo e($request->office ?? 'Not specified'); ?></div>
                             <?php endif; ?>
                         </div>
+                        
                         <?php if($request->reason): ?>
-                            <div style="margin-top:8px; padding:6px 10px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
-                                <div style="font-size:12px; color:#854d0e; font-weight:600;">Reason:</div>
-                                <div style="font-size:13px; color:#713f12; margin-top:2px;"><?php echo e($request->reason); ?></div>
-                            </div>
+                            
                         <?php endif; ?>
                         <div style="margin-top:8px;">
                             <span style="padding:4px 8px; border-radius:6px; background:#10b981; color:#fff; font-size:11px; font-weight:700;">Direct request</span>

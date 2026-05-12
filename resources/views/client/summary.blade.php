@@ -201,10 +201,11 @@
                                         <strong>Assigned Member:</strong> {{ $deduction->member->name }} ({{ $deduction->member->email }})
                                     </div>
                                 @endif
+                                {{-- Reason field hidden --}}
                                 @if($deduction->reason)
-                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #fca5a5;">
+                                    {{-- <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #fca5a5;">
                                         <strong>Reason:</strong> {{ $deduction->reason }}
-                                    </div>
+                                    </div> --}}
                                 @endif
                                 @if($deduction->received_by)
                                     <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #10b981;">
@@ -237,11 +238,12 @@
                                     <div style="font-size:12px; color:#991b1b; margin-top:4px;">Office: {{ $outbound->urgent_recipient_office }}</div>
                                 @endif
                             </div>
+                            {{-- Reason field hidden --}}
                             @if($outbound->reason)
-                                <div style="margin-top:8px; padding:6px 10px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
+                                {{-- <div style="margin-top:8px; padding:6px 10px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
                                     <div style="font-size:12px; color:#854d0e; font-weight:600;">Reason:</div>
                                     <div style="font-size:13px; color:#713f12; margin-top:2px;">{{ $outbound->reason }}</div>
-                                </div>
+                                </div> --}}
                             @endif
                             <div style="margin-top:8px;">
                                 <span style="padding:4px 8px; border-radius:6px; background:#dc2626; color:#fff; font-size:11px; font-weight:700;">URGENT</span>
@@ -274,14 +276,16 @@
                                 <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #fca5a5;">
                                     <strong>Recipient:</strong> {{ $outbound->urgent_recipient_name }} @if($outbound->urgent_recipient_office)({{ $outbound->urgent_recipient_office }})@endif
                                 </div>
+                                {{-- Reason field hidden --}}
                                 @if($outbound->reason)
-                                    <div style="margin-top:8px; padding:6px 8px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
+                                    {{-- <div style="margin-top:8px; padding:6px 8px; background:#fef9c3; border-radius:6px; border:1px solid #fde047;">
                                         <strong style="color:#854d0e;">Reason:</strong> {{ $outbound->reason }}
-                                    </div>
+                                    </div> --}}
                                 @endif
-                                <div style="margin-top:8px; padding:6px 8px; background:#fef2f2; border-radius:6px; border:1px solid #fca5a5;">
+                                {{-- Note field hidden --}}
+                                {{-- <div style="margin-top:8px; padding:6px 8px; background:#fef2f2; border-radius:6px; border:1px solid #fca5a5;">
                                     <strong style="color:#991b1b;">Note:</strong> This was an urgent outbound request processed immediately.
-                                </div>
+                                </div> --}}
                             </div>
                         </div>
                     </div>
@@ -341,9 +345,10 @@
                                 <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #6ee7b7;">
                                     <strong>Requested by:</strong> {{ $request->member?->name ?? $request->client?->name }} @if($request->member?->email)({{ $request->member->email }})@elseif($request->office)({{ $request->office }})@endif
                                 </div>
-                                <div style="margin-top:8px; padding:6px 8px; background:#ecfdf5; border-radius:6px; border:1px solid #6ee7b7;">
+                                {{-- Note field hidden --}}
+                                {{-- <div style="margin-top:8px; padding:6px 8px; background:#ecfdf5; border-radius:6px; border:1px solid #6ee7b7;">
                                     <strong style="color:#047857;">Note:</strong> This was a direct request from the @if($request->member) member @else client/office @endif, not through the regular request process.
-                                </div>
+                                </div> --}}
                             </div>
                         </div>
                     </div>
