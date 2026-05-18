@@ -152,7 +152,7 @@
                         <div>
                             <div class="card-title" style="color:#dc2626;">Deduction #{{ $deduction->id }}</div>
                             <div class="card-sub">Deducted on {{ $deduction->created_at?->format('F j, Y, g:i A') }}</div>
-                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5;">
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5; display: none;">
                                 <div style="font-size:12px; color:#991b1b; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Deducted</div>
                                 <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;">
                                     @if($deduction->stockRequestItem)
@@ -232,7 +232,7 @@
                         <div>
                             <div class="card-title" style="color:#2563eb;">Distribution #{{ $distribution->id }}</div>
                             <div class="card-sub">Distributed on {{ $distribution->created_at?->format('F j, Y, g:i A') }}</div>
-                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd;">
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd; display: none;">
                                 <div style="font-size:12px; color:#1d4ed8; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Distributed</div>
                                 <div style="font-size:14px; font-weight:800; color:#1e40af; margin-top:2px;">
                                     {{ $distribution->stockRequestItem?->stock?->description ?? 'Unknown Item' }}
@@ -283,7 +283,7 @@
                         <div>
                             <div class="card-title" style="color:#2563eb;">Distribution #{{ $distribution->id }}</div>
                             <div class="card-sub">Distributed on {{ $distribution->created_at?->format('F j, Y, g:i A') }}</div>
-                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd;">
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd; display: none;">
                                 <div style="font-size:12px; color:#1d4ed8; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Direct Request Item</div>
                                 <div style="font-size:14px; font-weight:800; color:#1e40af; margin-top:2px;">
                                     {{ $distribution->reason ?? 'Direct Request Item' }}

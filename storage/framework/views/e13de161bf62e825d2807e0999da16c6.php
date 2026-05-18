@@ -109,23 +109,23 @@
                                     <input 
                                         type="radio" 
                                         name="type" 
+                                        value="distribution" 
+                                        <?php echo e(($type ?? 'all') === 'distribution' ? 'checked' : ''); ?>
+
+                                        onchange="document.getElementById('filterForm').submit();"
+                                    >
+                                    <span>Distribution</span>
+                                </label>
+                                <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-size:13px;">
+                                    <input 
+                                        type="radio" 
+                                        name="type" 
                                         value="direct" 
                                         <?php echo e(($type ?? 'all') === 'direct' ? 'checked' : ''); ?>
 
                                         onchange="document.getElementById('filterForm').submit();"
                                     >
                                     <span>Direct</span>
-                                </label>
-                                <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-size:13px;">
-                                    <input 
-                                        type="radio" 
-                                        name="type" 
-                                        value="urgent" 
-                                        <?php echo e(($type ?? 'all') === 'urgent' ? 'checked' : ''); ?>
-
-                                        onchange="document.getElementById('filterForm').submit();"
-                                    >
-                                    <span>Urgent</span>
                                 </label>
                             </div>
                         </div>
@@ -155,7 +155,7 @@
                         <div>
                             <div class="card-title" style="color:#dc2626;">Deduction #<?php echo e($deduction->id); ?></div>
                             <div class="card-sub">Deducted on <?php echo e($deduction->created_at?->format('F j, Y, g:i A')); ?></div>
-                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5;">
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5; display: none;">
                                 <div style="font-size:12px; color:#991b1b; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Deducted</div>
                                 <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;">
                                     <?php if($deduction->stockRequestItem): ?>
@@ -225,6 +225,111 @@
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <?php endif; ?>
             
+            <hr style="margin:24px 0; border:none; border-top:1px solid #e2e8f0;">
+        <?php endif; ?>
+
+        <!-- Member Distribution Section -->
+        <?php if((isset($memberDistributions) && $memberDistributions->count() > 0) || (isset($distributionDirectRequests) && $distributionDirectRequests->count() > 0)): ?>
+            <h3 style="margin-bottom:12px; color:#2563eb; font-size:16px;">Member Distributions</h3>
+
+            <?php $__currentLoopData = $memberDistributions ?? collect(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $distribution): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div class="card" style="margin-bottom:14px; border-left:4px solid #2563eb;">
+                    <div class="card-head" onclick="toggleDistribution('distribution-<?php echo e($distribution->id); ?>')">
+                        <div>
+                            <div class="card-title" style="color:#2563eb;">Distribution #<?php echo e($distribution->id); ?></div>
+                            <div class="card-sub">Distributed on <?php echo e($distribution->created_at?->format('F j, Y, g:i A')); ?></div>
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd; display: none;">
+                                <div style="font-size:12px; color:#1d4ed8; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Distributed</div>
+                                <div style="font-size:14px; font-weight:800; color:#1e40af; margin-top:2px;">
+                                    <?php echo e($distribution->stockRequestItem?->stock?->description ?? 'Unknown Item'); ?>
+
+                                    (<?php echo e($distribution->distributed_qty); ?> units)
+                                </div>
+                                <?php if($distribution->member): ?>
+                                    <div style="font-size:12px; color:#1d4ed8; margin-top:4px;">Member: <?php echo e($distribution->member->name); ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div style="text-align:right; min-width:160px;">
+                            <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Type</div>
+                            <div style="margin-top:4px;">
+                                <span style="padding:4px 8px; border-radius:6px; background:#2563eb; color:#fff; font-size:12px; font-weight:700;">DISTRIBUTION</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="distribution-<?php echo e($distribution->id); ?>" class="card-body hidden">
+                        <div style="font-weight:700; margin-bottom:12px; color:var(--text); font-size:14px;">Distribution Details</div>
+                        <div style="display:grid; gap:8px;">
+                            <div style="padding:12px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px;">
+                                <div style="font-weight:600; color:#1e40af; margin-bottom:4px;"><?php echo e($distribution->stockRequestItem?->stock?->description ?? 'Unknown Item'); ?></div>
+                                <div style="display:flex; gap:16px; font-size:12px; color:#1d4ed8;">
+                                    <span><strong>ID:</strong> <?php echo e($distribution->stockRequestItem?->stock?->id_no ?? 'N/A'); ?></span>
+                                    <span><strong>Unit:</strong> <?php echo e($distribution->stockRequestItem?->stock?->unit ?? 'N/A'); ?></span>
+                                    <span><strong>Quantity:</strong> <?php echo e($distribution->distributed_qty); ?></span>
+                                </div>
+                                <?php if($distribution->member): ?>
+                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #93c5fd;">
+                                        <strong>Member:</strong> <?php echo e($distribution->member->name); ?> (<?php echo e($distribution->member->email); ?>)
+                                    </div>
+                                <?php endif; ?>
+                                <?php if($distribution->used_qty): ?>
+                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #93c5fd;">
+                                        <strong>Used Qty:</strong> <?php echo e($distribution->used_qty); ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+            <?php $__currentLoopData = $distributionDirectRequests ?? collect(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $distribution): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div class="card" style="margin-bottom:14px; border-left:4px solid #2563eb;">
+                    <div class="card-head" onclick="toggleDistribution('distribution-direct-<?php echo e($distribution->id); ?>')">
+                        <div>
+                            <div class="card-title" style="color:#2563eb;">Distribution #<?php echo e($distribution->id); ?></div>
+                            <div class="card-sub">Distributed on <?php echo e($distribution->created_at?->format('F j, Y, g:i A')); ?></div>
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd; display: none;">
+                                <div style="font-size:12px; color:#1d4ed8; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Direct Request Item</div>
+                                <div style="font-size:14px; font-weight:800; color:#1e40af; margin-top:2px;">
+                                    <?php echo e($distribution->reason ?? 'Direct Request Item'); ?>
+
+                                    (<?php echo e($distribution->deducted_qty); ?> units)
+                                </div>
+                                <?php if($distribution->member): ?>
+                                    <div style="font-size:12px; color:#1d4ed8; margin-top:4px;">Member: <?php echo e($distribution->member->name); ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div style="text-align:right; min-width:160px;">
+                            <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Type</div>
+                            <div style="margin-top:4px;">
+                                <span style="padding:4px 8px; border-radius:6px; background:#2563eb; color:#fff; font-size:12px; font-weight:700;">DISTRIBUTION</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="distribution-direct-<?php echo e($distribution->id); ?>" class="card-body hidden">
+                        <div style="font-weight:700; margin-bottom:12px; color:var(--text); font-size:14px;">Distribution Details</div>
+                        <div style="display:grid; gap:8px;">
+                            <div style="padding:12px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px;">
+                                <div style="font-weight:600; color:#1e40af; margin-bottom:4px;"><?php echo e($distribution->reason ?? 'Direct Request Item'); ?></div>
+                                <div style="display:flex; gap:16px; font-size:12px; color:#1d4ed8;">
+                                    <span><strong>Quantity:</strong> <?php echo e($distribution->deducted_qty); ?></span>
+                                </div>
+                                <?php if($distribution->member): ?>
+                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #93c5fd;">
+                                        <strong>Member:</strong> <?php echo e($distribution->member->name); ?> (<?php echo e($distribution->member->email); ?>)
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
             <hr style="margin:24px 0; border:none; border-top:1px solid #e2e8f0;">
         <?php endif; ?>
 
@@ -359,10 +464,11 @@
         <?php endif; ?>
 
         <!-- Stock Requests Section -->
-        <h3 style="margin-bottom:12px; color:#3b82f6; font-size:16px;">Stock Requests</h3>
-        <?php $__empty_1 = true; $__currentLoopData = $requests; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $req): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-            <div class="card status-<?php echo e($req->status); ?>" style="margin-bottom:14px;">
-                <div class="card-head" onclick="toggleReq('req-<?php echo e($req->id); ?>')">
+        <?php if(($type ?? 'all') === 'all' || ($type ?? 'all') === 'request'): ?>
+            <h3 style="margin-bottom:12px; color:#3b82f6; font-size:16px;">Stock Requests</h3>
+            <?php $__empty_1 = true; $__currentLoopData = $requests; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $req): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <div class="card status-<?php echo e($req->status); ?>" style="margin-bottom:14px;">
+                    <div class="card-head" onclick="toggleReq('req-<?php echo e($req->id); ?>')">
                     <div>
                         <div class="card-title">Request #<?php echo e($req->id); ?> from <?php echo e($req->office ?? 'Unknown Office'); ?></div>
                         <div class="card-sub">Submitted on <?php echo e($req->created_at?->format('F j, Y, g:i A')); ?></div>
@@ -425,6 +531,7 @@
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
@@ -448,6 +555,12 @@
         }
         
         function toggleDirectRequest(id){
+            const el = document.getElementById(id);
+            if(!el) return;
+            el.classList.toggle('hidden');
+        }
+
+        function toggleDistribution(id){
             const el = document.getElementById(id);
             if(!el) return;
             el.classList.toggle('hidden');
