@@ -6,24 +6,37 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Inbound;
 use App\Models\Stock;
+use Dompdf\Dompdf;
 
 class InboundController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Return merged inbound totals grouped by stock (so identical items appear once)
-        $inbounds = \DB::table('inbounds')
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        $inboundsQuery = \DB::table('inbounds')
             ->join('stocks', 'inbounds.stock_id', '=', 'stocks.id')
             ->leftJoin('categories', 'stocks.category_id', '=', 'categories.id')
             ->select(
                 'stocks.id_no',
                 'stocks.description',
                 'stocks.unit',
-                \DB::raw('SUM(inbounds.total) as total'),
-                'categories.name as category_name'
-            )
-            ->groupBy('stocks.id_no', 'stocks.description', 'stocks.unit', 'categories.name')
-            ->orderBy('stocks.id_no')
+                'inbounds.total',
+                'categories.name as category_name',
+                'inbounds.created_at'
+            );
+
+        if ($dateFrom) {
+            $inboundsQuery->whereDate('inbounds.created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $inboundsQuery->whereDate('inbounds.created_at', '<=', $dateTo);
+        }
+
+        $inbounds = $inboundsQuery
+            ->orderByDesc('inbounds.created_at')
             ->get();
 
         return view('admin.inbound.index', compact('inbounds'));
@@ -51,6 +64,59 @@ class InboundController extends Controller
         $stock->save();
 
         return redirect()->route('inbound.index')->with('success', 'Inbound added and stock updated.');
+    }
+
+    public function generateReportPdf(Request $request)
+    {
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        $inboundsQuery = \DB::table('inbounds')
+            ->join('stocks', 'inbounds.stock_id', '=', 'stocks.id')
+            ->leftJoin('categories', 'stocks.category_id', '=', 'categories.id')
+            ->select(
+                'stocks.id_no',
+                'stocks.description',
+                'stocks.unit',
+                'inbounds.total',
+                'categories.name as category_name',
+                'inbounds.created_at'
+            );
+
+        if ($dateFrom) {
+            $inboundsQuery->whereDate('inbounds.created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $inboundsQuery->whereDate('inbounds.created_at', '<=', $dateTo);
+        }
+
+        $inbounds = $inboundsQuery
+            ->orderByDesc('inbounds.created_at')
+            ->get();
+
+        $summary = [
+            'records' => $inbounds->count(),
+            'total_quantity' => $inbounds->sum('total'),
+        ];
+
+        $pdf = new Dompdf();
+        $pdf->set_option('isRemoteEnabled', true);
+        $pdf->set_option('isHtml5ParserEnabled', true);
+        $pdf->set_option('isFontSubsettingEnabled', true);
+        $pdf->set_option('enablePhp', true);
+        $pdf->set_option('enableJavascript', true);
+        $pdf->setPaper('a4', 'portrait');
+
+        $html = view('admin.inbound-report-pdf', compact('inbounds', 'dateFrom', 'dateTo', 'summary'))->render();
+        $pdf->set_option('chroot', base_path());
+        $pdf->loadHtml($html);
+        $pdf->render();
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="inbound-report.pdf"',
+        ]);
     }
 
     /**

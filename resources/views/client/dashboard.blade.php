@@ -120,8 +120,8 @@
 
         {{-- Member Performance Analytics Section --}}
         <div style="margin-top:32px;">
-            <h2 style="margin:0 0 8px 0;">Member Performance Analytics</h2>
-            <div style="color:#6b7280; font-size:14px;">Monitor member activity and usage patterns</div>
+            <!-- <h2 style="margin:0 0 8px 0;">Member Performance Analytics</h2> -->
+            <!-- <div style="color:#6b7280; font-size:14px;">Monitor member activity and usage patterns</div> -->
         </div>
 
         @if(isset($memberPerformance))
@@ -129,7 +129,7 @@
                 <div style="padding:20px; background:linear-gradient(135deg, #f8fafc, #e2e8f0); border-bottom:1px solid #e2e8f0;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
                         <h3 style="margin:0; font-size:18px; color:#1e293b; display:flex; align-items:center; gap:8px;">
-                            <span>�</span> Member Performance Analytics
+                            <span></span> Member Performance Analytics
                         </h3>
                         <div style="display:flex; gap:8px;">
                             <button onclick="showPerformanceChart('frequent')" id="frequentBtn" class="performance-btn active" style="padding:8px 16px; border:1px solid #3b82f6; background:#3b82f6; color:white; border-radius:8px; font-size:14px; cursor:pointer; transition:all 0.2s ease;">
@@ -209,6 +209,7 @@
             </div>
         @endif
 
+        @if(false)
         {{-- Direct Client Members Section --}}
         <div style="margin-top:32px;">
             <h2 style="margin:0 0 8px 0;">Member inventory overview</h2>
@@ -338,6 +339,7 @@
                 <div style="font-size:18px; font-weight:600; margin-bottom:8px;">No Direct Members Found</div>
                 <div style="font-size:14px;">No direct client members have been created yet.</div>
             </div>
+        @endif
         @endif
     @endif
 @endsection
