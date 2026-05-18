@@ -121,6 +121,8 @@ class ClientDashboardController extends Controller
         // Initialize empty collections
         $requests = collect();
         $directDeductions = collect();
+        $memberDistributions = collect();
+        $distributionDirectRequests = collect();
         $directRequests = collect();
         $urgentOutbounds = collect();
 
@@ -138,13 +140,41 @@ class ClientDashboardController extends Controller
 
         if ($type === 'all' || $type === 'deduction') {
             $directDeductionsQuery = ClientDirectDeduction::with(['stockRequestItem.stock', 'member'])
-                ->where('client_id', Auth::id());
+                ->where('client_id', Auth::id())
+                ->where(function ($query) {
+                    $query->whereNotNull('stock_request_item_id')
+                        ->orWhere('reason', 'not like', 'Member distribution - %');
+                });
 
             if ($memberId !== '') {
                 $directDeductionsQuery->where('member_id', $memberId);
             }
 
             $directDeductions = $directDeductionsQuery->latest()->get();
+        }
+
+        if ($type === 'all' || $type === 'distribution') {
+            $memberDistributionsQuery = \App\Models\ClientMemberDistribution::with(['stockRequestItem.stock', 'member'])
+                ->whereHas('member', function ($query) {
+                    $query->where('client_id', Auth::id());
+                });
+
+            if ($memberId !== '') {
+                $memberDistributionsQuery->where('member_id', $memberId);
+            }
+
+            $memberDistributions = $memberDistributionsQuery->latest()->get();
+
+            $distributionDirectRequestsQuery = ClientDirectDeduction::with(['member'])
+                ->where('client_id', Auth::id())
+                ->whereNull('stock_request_item_id')
+                ->where('reason', 'like', 'Member distribution - %');
+
+            if ($memberId !== '') {
+                $distributionDirectRequestsQuery->where('member_id', $memberId);
+            }
+
+            $distributionDirectRequests = $distributionDirectRequestsQuery->latest()->get();
         }
 
         if ($type === 'all' || $type === 'direct') {
@@ -189,6 +219,8 @@ class ClientDashboardController extends Controller
             'counts' => $counts,
             'requests' => $requests,
             'directDeductions' => $directDeductions,
+            'memberDistributions' => $memberDistributions,
+            'distributionDirectRequests' => $distributionDirectRequests,
             'directRequests' => $directRequests,
             'urgentOutbounds' => $urgentOutbounds,
             'clientMembers' => $clientMembers,

@@ -59,9 +59,8 @@ class InboundController extends Controller
 
         // update stock
         $stock = Stock::find($request->stock_id);
-        $stock->total += $request->total;
-        $stock->stock += $request->total;
-        $stock->save();
+        $stock->increment('total', $request->total);
+        $stock->increment('stock', $request->total);
 
         return redirect()->route('inbound.index')->with('success', 'Inbound added and stock updated.');
     }
@@ -390,10 +389,14 @@ class InboundController extends Controller
             
             $quantity = (int) $quantityNumeric;
 
-            // Normalize keys: always normalize by description (case-insensitive) to ensure identical descriptions merge
+            // Normalize keys: prefer Stock ID when supplied, otherwise normalize by description.
             $normDesc = strtolower(preg_replace('/\s+/', ' ', trim($description)));
             $normDescKey = preg_replace('/[^\p{L}\p{N}\s]/u', '', $normDesc); // remove punctuation for key stability
-            $key = 'DESC:' . $normDescKey;
+            if ($idNo !== null && $idNo !== '') {
+                $key = 'ID:' . strtolower(trim($idNo));
+            } else {
+                $key = 'DESC:' . $normDescKey;
+            }
 
             if (!isset($aggregates[$key])) {
                 $aggregates[$key] = [
@@ -436,15 +439,15 @@ class InboundController extends Controller
                 }
             }
 
-            // Find existing stock by description (case-insensitive). If not found, try by provided id_no as fallback.
+            // Find existing stock by Stock ID first, then match by normalized description.
             $stock = null;
-            $searchDesc = strtolower(trim($description));
-            if ($searchDesc !== '') {
-                $stock = Stock::whereRaw('LOWER(description) = ?', [$searchDesc])->first();
+            if ($idNo) {
+                $stock = Stock::where('id_no', $idNo)->first();
             }
 
-            if (!$stock && $idNo) {
-                $stock = Stock::where('id_no', $idNo)->first();
+            if (!$stock && $description !== '') {
+                $searchDesc = strtolower(trim($description));
+                $stock = Stock::whereRaw('LOWER(TRIM(description)) = ?', [$searchDesc])->first();
             }
 
             if (!$stock) {
@@ -475,9 +478,8 @@ class InboundController extends Controller
 
             if ($quantity > 0) {
                 Inbound::create(['stock_id' => $stock->id, 'total' => $quantity]);
-                $stock->total += $quantity;
-                $stock->stock += $quantity;
-                $stock->save();
+                $stock->increment('total', $quantity);
+                $stock->increment('stock', $quantity);
                 $imported++;
             } else {
                 // Still save stock changes if any, but don't create inbound record for zero quantity

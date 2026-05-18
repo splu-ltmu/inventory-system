@@ -108,21 +108,21 @@
                                     <input 
                                         type="radio" 
                                         name="type" 
-                                        value="direct" 
-                                        {{ ($type ?? 'all') === 'direct' ? 'checked' : '' }}
+                                        value="distribution" 
+                                        {{ ($type ?? 'all') === 'distribution' ? 'checked' : '' }}
                                         onchange="document.getElementById('filterForm').submit();"
                                     >
-                                    <span>Direct</span>
+                                    <span>Distribution</span>
                                 </label>
                                 <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-size:13px;">
                                     <input 
                                         type="radio" 
                                         name="type" 
-                                        value="urgent" 
-                                        {{ ($type ?? 'all') === 'urgent' ? 'checked' : '' }}
+                                        value="direct" 
+                                        {{ ($type ?? 'all') === 'direct' ? 'checked' : '' }}
                                         onchange="document.getElementById('filterForm').submit();"
                                     >
-                                    <span>Urgent</span>
+                                    <span>Direct</span>
                                 </label>
                             </div>
                         </div>
@@ -152,7 +152,7 @@
                         <div>
                             <div class="card-title" style="color:#dc2626;">Deduction #{{ $deduction->id }}</div>
                             <div class="card-sub">Deducted on {{ $deduction->created_at?->format('F j, Y, g:i A') }}</div>
-                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5;">
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #fef2f2, #fecaca); border-radius:8px; border:1px solid #fca5a5; display: none;">
                                 <div style="font-size:12px; color:#991b1b; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Deducted</div>
                                 <div style="font-size:14px; font-weight:800; color:#7f1d1d; margin-top:2px;">
                                     @if($deduction->stockRequestItem)
@@ -219,6 +219,109 @@
             @empty
             @endforelse
             
+            <hr style="margin:24px 0; border:none; border-top:1px solid #e2e8f0;">
+        @endif
+
+        <!-- Member Distribution Section -->
+        @if((isset($memberDistributions) && $memberDistributions->count() > 0) || (isset($distributionDirectRequests) && $distributionDirectRequests->count() > 0))
+            <h3 style="margin-bottom:12px; color:#2563eb; font-size:16px;">Member Distributions</h3>
+
+            @foreach($memberDistributions ?? collect() as $distribution)
+                <div class="card" style="margin-bottom:14px; border-left:4px solid #2563eb;">
+                    <div class="card-head" onclick="toggleDistribution('distribution-{{ $distribution->id }}')">
+                        <div>
+                            <div class="card-title" style="color:#2563eb;">Distribution #{{ $distribution->id }}</div>
+                            <div class="card-sub">Distributed on {{ $distribution->created_at?->format('F j, Y, g:i A') }}</div>
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd; display: none;">
+                                <div style="font-size:12px; color:#1d4ed8; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Item Distributed</div>
+                                <div style="font-size:14px; font-weight:800; color:#1e40af; margin-top:2px;">
+                                    {{ $distribution->stockRequestItem?->stock?->description ?? 'Unknown Item' }}
+                                    ({{ $distribution->distributed_qty }} units)
+                                </div>
+                                @if($distribution->member)
+                                    <div style="font-size:12px; color:#1d4ed8; margin-top:4px;">Member: {{ $distribution->member->name }}</div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div style="text-align:right; min-width:160px;">
+                            <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Type</div>
+                            <div style="margin-top:4px;">
+                                <span style="padding:4px 8px; border-radius:6px; background:#2563eb; color:#fff; font-size:12px; font-weight:700;">DISTRIBUTION</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="distribution-{{ $distribution->id }}" class="card-body hidden">
+                        <div style="font-weight:700; margin-bottom:12px; color:var(--text); font-size:14px;">Distribution Details</div>
+                        <div style="display:grid; gap:8px;">
+                            <div style="padding:12px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px;">
+                                <div style="font-weight:600; color:#1e40af; margin-bottom:4px;">{{ $distribution->stockRequestItem?->stock?->description ?? 'Unknown Item' }}</div>
+                                <div style="display:flex; gap:16px; font-size:12px; color:#1d4ed8;">
+                                    <span><strong>ID:</strong> {{ $distribution->stockRequestItem?->stock?->id_no ?? 'N/A' }}</span>
+                                    <span><strong>Unit:</strong> {{ $distribution->stockRequestItem?->stock?->unit ?? 'N/A' }}</span>
+                                    <span><strong>Quantity:</strong> {{ $distribution->distributed_qty }}</span>
+                                </div>
+                                @if($distribution->member)
+                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #93c5fd;">
+                                        <strong>Member:</strong> {{ $distribution->member->name }} ({{ $distribution->member->email }})
+                                    </div>
+                                @endif
+                                @if($distribution->used_qty)
+                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #93c5fd;">
+                                        <strong>Used Qty:</strong> {{ $distribution->used_qty }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+
+            @foreach($distributionDirectRequests ?? collect() as $distribution)
+                <div class="card" style="margin-bottom:14px; border-left:4px solid #2563eb;">
+                    <div class="card-head" onclick="toggleDistribution('distribution-direct-{{ $distribution->id }}')">
+                        <div>
+                            <div class="card-title" style="color:#2563eb;">Distribution #{{ $distribution->id }}</div>
+                            <div class="card-sub">Distributed on {{ $distribution->created_at?->format('F j, Y, g:i A') }}</div>
+                            <div style="margin-top:8px; padding:6px 10px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px; border:1px solid #93c5fd; display: none;">
+                                <div style="font-size:12px; color:#1d4ed8; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Direct Request Item</div>
+                                <div style="font-size:14px; font-weight:800; color:#1e40af; margin-top:2px;">
+                                    {{ $distribution->reason ?? 'Direct Request Item' }}
+                                    ({{ $distribution->deducted_qty }} units)
+                                </div>
+                                @if($distribution->member)
+                                    <div style="font-size:12px; color:#1d4ed8; margin-top:4px;">Member: {{ $distribution->member->name }}</div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div style="text-align:right; min-width:160px;">
+                            <div style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Type</div>
+                            <div style="margin-top:4px;">
+                                <span style="padding:4px 8px; border-radius:6px; background:#2563eb; color:#fff; font-size:12px; font-weight:700;">DISTRIBUTION</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="distribution-direct-{{ $distribution->id }}" class="card-body hidden">
+                        <div style="font-weight:700; margin-bottom:12px; color:var(--text); font-size:14px;">Distribution Details</div>
+                        <div style="display:grid; gap:8px;">
+                            <div style="padding:12px; background:linear-gradient(135deg, #eff6ff, #dbeafe); border-radius:8px;">
+                                <div style="font-weight:600; color:#1e40af; margin-bottom:4px;">{{ $distribution->reason ?? 'Direct Request Item' }}</div>
+                                <div style="display:flex; gap:16px; font-size:12px; color:#1d4ed8;">
+                                    <span><strong>Quantity:</strong> {{ $distribution->deducted_qty }}</span>
+                                </div>
+                                @if($distribution->member)
+                                    <div style="margin-top:8px; padding:6px 8px; background:#fff; border-radius:6px; border:1px solid #93c5fd;">
+                                        <strong>Member:</strong> {{ $distribution->member->name }} ({{ $distribution->member->email }})
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+
             <hr style="margin:24px 0; border:none; border-top:1px solid #e2e8f0;">
         @endif
 
@@ -360,10 +463,11 @@
         @endif
 
         <!-- Stock Requests Section -->
-        <h3 style="margin-bottom:12px; color:#3b82f6; font-size:16px;">Stock Requests</h3>
-        @forelse($requests as $req)
-            <div class="card status-{{ $req->status }}" style="margin-bottom:14px;">
-                <div class="card-head" onclick="toggleReq('req-{{ $req->id }}')">
+        @if(($type ?? 'all') === 'all' || ($type ?? 'all') === 'request')
+            <h3 style="margin-bottom:12px; color:#3b82f6; font-size:16px;">Stock Requests</h3>
+            @forelse($requests as $req)
+                <div class="card status-{{ $req->status }}" style="margin-bottom:14px;">
+                    <div class="card-head" onclick="toggleReq('req-{{ $req->id }}')">
                     <div>
                         <div class="card-title">Request #{{ $req->id }} from {{ $req->office ?? 'Unknown Office' }}</div>
                         <div class="card-sub">Submitted on {{ $req->created_at?->format('F j, Y, g:i A') }}</div>
@@ -426,7 +530,8 @@
                     </div>
                 </div>
             </div>
-        @endforelse
+            @endforelse
+        @endif
     </div>
 
     <script>
@@ -449,6 +554,12 @@
         }
         
         function toggleDirectRequest(id){
+            const el = document.getElementById(id);
+            if(!el) return;
+            el.classList.toggle('hidden');
+        }
+
+        function toggleDistribution(id){
             const el = document.getElementById(id);
             if(!el) return;
             el.classList.toggle('hidden');
