@@ -29,8 +29,7 @@
                         <option value="<?php echo e($item->id); ?>" 
                                 data-available="<?php echo e($item->available_qty); ?>"
                                 data-stock-id="<?php echo e($item->stock->id_no); ?>"
-                                data-stock-name="<?php echo e($item->stock->description ?? $item->stock->name ?? 'Item'); ?>"
-                                data-price="<?php echo e($item->stock->price ?? 0); ?>">
+                                data-stock-name="<?php echo e($item->stock->description ?? $item->stock->name ?? 'Item'); ?>">
                             <?php echo e($item->stock->id_no); ?> - <?php echo e($item->stock->description ?? $item->stock->name ?? 'Item'); ?> (Available: <?php echo e($item->available_qty); ?>)
                         </option>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

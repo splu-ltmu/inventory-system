@@ -137,6 +137,7 @@
                 <th>Item</th>
                 <th class="tr">Starting Balance</th>
                 <th class="tr">Inbound</th>
+                <th class="tr">Sum</th>
                 <th class="tr">Outbound</th>
                 <th class="tr">Ending Balance</th>
             </tr>
@@ -147,12 +148,13 @@
                     <td><?php echo e($row['item']); ?> <?php if($row['id_no']): ?> (<?php echo e($row['id_no']); ?>)<?php endif; ?></td>
                     <td class="tr"><?php echo e(number_format($row['starting_balance'])); ?></td>
                     <td class="tr"><?php echo e(number_format($row['inbound'])); ?></td>
+                    <td class="tr"><?php echo e(number_format($row['sum'])); ?></td>
                     <td class="tr"><?php echo e(number_format($row['outbound'])); ?></td>
                     <td class="tr"><?php echo e(number_format($row['ending_balance'])); ?></td>
                 </tr>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <tr>
-                    <td colspan="5" class="tc" style="padding:16px; font-style:italic; color:#999;">No stock records found for selected filters.</td>
+                    <td colspan="6" class="tc" style="padding:16px; font-style:italic; color:#999;">No stock records found for selected filters.</td>
                 </tr>
             <?php endif; ?>
         </tbody>

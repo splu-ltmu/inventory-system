@@ -24,8 +24,6 @@
         padding: 12px;
         background:var(--bg); 
         color:var(--text); 
-        display: flex;
-        gap: 16px;
     }
 
     .topbar{ 
@@ -50,25 +48,6 @@
     .topbar .sub{ 
         color:var(--muted); 
         font-size:12px; 
-    }
-
-    .sidebar{
-        width: 280px;
-        background:var(--panel);
-        border:1px solid var(--line);
-        border-radius:10px;
-        padding:16px;
-        height: fit-content;
-        position: sticky;
-        top: 12px;
-        flex-shrink: 0;
-    }
-
-    .content-wrapper{
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
     }
 
     main{ 
@@ -125,12 +104,6 @@
     @media (max-width: 768px){
         body{
             padding: 8px;
-            flex-direction: column;
-        }
-
-        .sidebar{
-            width: 100%;
-            position: static;
         }
 
         .topbar{
@@ -205,30 +178,24 @@
     </style>
 </head>
 <body>
-    <aside class="sidebar">
-        <?php echo $__env->make('partials.admin-sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-    </aside>
-    
-    <div class="content-wrapper">
-        <header>
-            <div class="topbar">
-                <div style="display: flex; align-items: center; gap: 16px;">
-                    <img src="/images/logo.png.png" alt="Logo" style="width: 60px; height: 60px; object-fit: contain;">
-                    <div>
-                        <div class="title">Admin Inventory System</div>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="color: var(--muted); font-size:12px;"><?php echo e(now()->format('M d, Y h:i A')); ?></div>
-                    <?php echo $__env->make('partials.top-notifications', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    <header>
+        <div class="topbar">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <img src="/images/logo.png.png" alt="Logo" style="width: 60px; height: 60px; object-fit: contain;">
+                <div>
+                    <div class="title">Admin Inventory System</div>
                 </div>
             </div>
-        </header>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="color: var(--muted); font-size:12px;"><?php echo e(now()->format('M d, Y h:i A')); ?></div>
+                <?php echo $__env->make('partials.top-notifications', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            </div>
+        </div>
+    </header>
 
-        <main>
-            <?php echo $__env->yieldContent('content'); ?>
-        </main>
-    </div>
+    <main>
+        <?php echo $__env->yieldContent('content'); ?>
+    </main>
 </body>
 </html>
 <?php /**PATH /var/www/resources/views/layouts/admin.blade.php ENDPATH**/ ?>

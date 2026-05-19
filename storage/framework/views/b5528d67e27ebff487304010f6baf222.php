@@ -49,9 +49,6 @@
                         <div style="color:#64748b; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Item Information</div>
                         <div style="font-weight:700; color:#1e40af; font-size:16px; margin-bottom:4px;"><?php echo e($outbound->stock->id_no); ?></div>
                         <div style="color:#475569; font-size:14px;"><?php echo e($outbound->stock->description ?? $outbound->stock->name ?? 'Item'); ?></div>
-                        <?php if($outbound->stock->price): ?>
-                            <div style="color:#64748b; font-size:12px; margin-top:8px;">Unit Price: ₱<?php echo e(number_format($outbound->stock->price, 2)); ?></div>
-                        <?php endif; ?>
                     </div>
 
                     <!-- Quantity Information -->
@@ -59,9 +56,6 @@
                         <div style="color:#64748b; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Quantity</div>
                         <div style="font-weight:700; color:#1e40af; font-size:24px; margin-bottom:4px;"><?php echo e($outbound->total); ?></div>
                         <div style="color:#475569; font-size:14px;">items distributed</div>
-                        <?php if($outbound->stock->price): ?>
-                            <div style="color:#64748b; font-size:12px; margin-top:8px;">Total Value: ₱<?php echo e(number_format($outbound->total * $outbound->stock->price, 2)); ?></div>
-                        <?php endif; ?>
                     </div>
 
                     <!-- Recipient Information -->

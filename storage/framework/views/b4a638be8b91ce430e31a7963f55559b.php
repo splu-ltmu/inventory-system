@@ -1,5 +1,3 @@
-
-
 <?php
   $brand = 'Inventory System';
   $pageTitle = 'Stocks';
