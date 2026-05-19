@@ -1,1 +1,0 @@
-<?php /**PATH /var/www/resources/views/partials/client-sidebar.blade.php ENDPATH**/ ?>

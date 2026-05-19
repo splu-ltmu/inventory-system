@@ -1,1 +1,0 @@
-<?php /**PATH /var/www/resources/views/client/requests/_list.blade.php ENDPATH**/ ?>
