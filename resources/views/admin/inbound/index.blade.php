@@ -922,7 +922,7 @@
                                 <button type="button" onclick="openAllocationModal({{ $row->id }})"
                                     class="btn btn-outline btn-add-inbound">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke-width="2
+                                        stroke-width="2"
                                         width="16" height="16"
                                         stroke="currentColor" class="size-6">
                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -1038,6 +1038,10 @@
                             ✕
                         </button> --}}
                     </div>
+                </div>
+
+                <div id="allocationError"
+                    style="display:none; margin-bottom:16px; padding:10px 12px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:13px; font-weight:600;">
                 </div>
 
                 <div style="display:flex; gap:12px;">
@@ -1171,17 +1175,75 @@
 
             container.appendChild(row);
             officeIndex++;
+            validateOfficeAllocationLimit();
         }
 
         function removeOfficeRow(button) {
             button.closest('.office-row').remove();
+            validateOfficeAllocationLimit();
         }
+
+        function getOfficeAllocationTotal() {
+            let total = 0;
+
+            document.querySelectorAll("input[name^='office_allocation'][name$='[quantity]']").forEach(input => {
+                total += parseInt(input.value || '0', 10) || 0;
+            });
+
+            return total;
+        }
+
+        function validateOfficeAllocationLimit(showAlert = false) {
+            const inboundQty = parseInt(document.getElementById('total')?.value || '0', 10) || 0;
+            const allocatedQty = getOfficeAllocationTotal();
+            const errorBox = document.getElementById('allocationError');
+            const submitButton = document.querySelector('#inboundForm button[type="submit"]');
+
+            const exceeded = allocatedQty > inboundQty;
+
+            if (errorBox) {
+                if (exceeded) {
+                    errorBox.textContent = `Office allocation total (${allocatedQty}) cannot exceed inbound quantity (${inboundQty}).`;
+                    errorBox.style.display = 'block';
+                } else {
+                    errorBox.textContent = '';
+                    errorBox.style.display = 'none';
+                }
+            }
+
+            if (submitButton) {
+                submitButton.disabled = exceeded;
+                submitButton.style.opacity = exceeded ? '0.6' : '1';
+                submitButton.style.cursor = exceeded ? 'not-allowed' : 'pointer';
+            }
+
+            if (exceeded && showAlert) {
+                alert(`Office allocation total (${allocatedQty}) cannot exceed inbound quantity (${inboundQty}).`);
+            }
+
+            return !exceeded;
+        }
+
+        document.addEventListener('input', function (e) {
+            if (
+                e.target.id === 'total' ||
+                e.target.matches("input[name^='office_allocation'][name$='[quantity]']")
+            ) {
+                validateOfficeAllocationLimit();
+            }
+        });
+
+        document.getElementById('inboundForm')?.addEventListener('submit', function (e) {
+            if (!validateOfficeAllocationLimit(true)) {
+                e.preventDefault();
+            }
+        });
 
         /** @abstract
          * noli - OJT
          */
         // Pass stocks data to JavaScript
-        const stocksData = @json($stocks);
+        const stocksData = JSON.parse(document.getElementById('stocksDataJson')?.textContent || '[]');
 
         function openInboundModal() {
             document.getElementById('inboundModal').style.display = 'flex';
@@ -1191,14 +1253,6 @@
             document.getElementById('inboundModal').style.display = 'none';
         }
 
-        // Close modal when clicking outside
-        // document.getElementById('inboundModal').addEventListener('click', function(e) {
-        //     if (e.target === this) {
-        //         closeInboundModal();
-        //     }
-        // });
-
-        // Autocomplete functionality for inbound modal
         (function() {
             const searchInput = document.getElementById('stock_search');
             const suggestionsList = document.getElementById('suggestions_list');
@@ -1253,17 +1307,17 @@
                                 localStock.available || localStock.amount || 0 : 0;
 
                             return `
-                    <li data-id="${stock.id}" data-description="${stock.description}" data-code="${stock.id_no}" data-unit="${stock.unit}" style="padding:10px; cursor:pointer; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-                        <div style="flex:1;">
-                            <div style="font-weight:500; color:var(--text);">${stock.description}</div>
-                            <div style="font-size:12px; color:var(--muted);">ID: ${stock.id_no} ${stock.category_name ? ' ' + stock.category_name : ''}</div>
-                        </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; margin-left:8px;">
-                            <div style="font-size:12px; color:var(--muted);">${stock.unit || 'pcs'}</div>
-                            <div style="font-size:11px; color:#059669; font-weight:600;">Available: ${quantity}</div>
-                        </div>
-                    </li>
-                `;
+                                    <li data-id="${stock.id}" data-description="${stock.description}" data-code="${stock.id_no}" data-unit="${stock.unit}" style="padding:10px; cursor:pointer; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+                                        <div style="flex:1;">
+                                            <div style="font-weight:500; color:var(--text);">${stock.description}</div>
+                                            <div style="font-size:12px; color:var(--muted);">ID: ${stock.id_no} ${stock.category_name ? ' ' + stock.category_name : ''}</div>
+                                        </div>
+                                        <div style="display:flex; flex-direction:column; align-items:flex-end; margin-left:8px;">
+                                            <div style="font-size:12px; color:var(--muted);">${stock.unit || 'pcs'}</div>
+                                            <div style="font-size:11px; color:#059669; font-weight:600;">Available: ${quantity}</div>
+                                        </div>
+                                    </li>
+                                `;
                         }).join('');
 
                         // Add click handlers to each suggestion

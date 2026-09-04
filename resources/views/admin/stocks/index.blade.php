@@ -235,7 +235,7 @@
             name="q"
             type="search"
             value="{{ request('q') }}"
-            placeholder="Search ID, description, category..."
+            placeholder="Search ID or description"
             style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-width:260px;"
         >
 
@@ -257,13 +257,23 @@
             name="availability"
             style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;"
         >
-            <option value="">All</option>
+            <option value="">All stock levels</option>
             <option value="in" {{ request('availability') === 'in' ? 'selected' : '' }}>In stock (green)</option>
             <option value="low" {{ request('availability') === 'low' ? 'selected' : '' }}>Low stock (orange / red)</option>
             <option value="out" {{ request('availability') === 'out' ? 'selected' : '' }}>Out of stock (red)</option>
         </select>
 
-        <button type="submit" class="btn-link" style="cursor:pointer;">Filter</button>
+        <select
+            id="filterHidden"
+            name="hidden"
+            style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;"
+        >
+            <option value="">All visibility</option>
+            <option value="visible" {{ request('hidden') === 'visible' ? 'selected' : '' }}>Visible only</option>
+            <option value="hidden" {{ request('hidden') === 'hidden' ? 'selected' : '' }}>Hidden only</option>
+        </select>
+        
+        <a href="{{ route('stocks.index') }}" class="btn-link">Clear</a>
     </form>
 
     <a class="btn-link" href="#" onclick="openStockModal()">Add New Item</a>
@@ -289,24 +299,23 @@
                     $desc = $s->description ?? $s->name ?? '';
                     $stockVal = $s->stock ?? 0;
                 @endphp
-                <div class="field">
-                    <tr
-                        style="border-bottom:1px solid #e0e7ff; background:linear-gradient(135deg, #ffffff, #f8fafc);"
-                        data-stock-id="{{ $s->id }}"
-                        data-id="{{ strtolower($s->id_no ?? $s->id) }}"
-                        data-desc="{{ strtolower($desc) }}"
-                        data-cat="{{ strtolower($cat) }}"
-                        data-stock="{{ $stockVal }}"
-                        data-hidden="{{ $s->hidden ? 1 : 0 }}"
-                    >
+                <tr
+                    style="border-bottom:1px solid #e0e7ff; background:linear-gradient(135deg, #ffffff, #f8fafc);"
+                    data-stock-id="{{ $s->id }}"
+                    data-id="{{ strtolower($s->id_no ?? $s->id) }}"
+                    data-desc="{{ strtolower($desc) }}"
+                    data-cat="{{ strtolower($cat) }}"
+                    data-stock="{{ $stockVal }}"
+                    data-hidden="{{ $s->hidden ? 1 : 0 }}"
+                >
                     <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
                         <div style="font-weight:700; color:#1e40af; font-size:14px;">{{ $s->id_no ?? $s->id }}</div>
                     </td>
                     <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
-                        <div style="color:#64748b; font-size:14px;">{{ $desc ?: 'â' }}</div>
+                        <div style="color:#64748b; font-size:14px;">{{ $desc ?: '—' }}</div>
                     </td>
                     <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#64748b; font-size:14px;">{{ $cat ?: 'Unknown' }}</td>
-                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#475569; font-weight:600;">{{ $s->unit ?? 'â' }}</td>
+                    <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff; color:#475569; font-weight:600;">{{ $s->unit ?? '—' }}</td>
                     <td style="padding:14px 10px; border-bottom:1px solid #e0e7ff;">
                         @if($stockVal >= 50)
                             <span style="padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; border:1px solid #bbf7d0; background:#ecfdf5; color:#059669;">{{ $stockVal }} available</span>
@@ -632,6 +641,7 @@ const stocksFilterForm = document.getElementById('stocksFilterForm');
 const stocksSearch = document.getElementById('stocksSearch');
 const filterCategory = document.getElementById('filterCategory');
 const filterAvailability = document.getElementById('filterAvailability');
+const filterHidden = document.getElementById('filterHidden');
 
 let stocksSearchTimeout;
 
@@ -647,6 +657,7 @@ function submitStocksFilter() {
 stocksSearch && stocksSearch.addEventListener('input', submitStocksFilter);
 filterCategory && filterCategory.addEventListener('change', () => stocksFilterForm.submit());
 filterAvailability && filterAvailability.addEventListener('change', () => stocksFilterForm.submit());
+filterHidden && filterHidden.addEventListener('change', () => stocksFilterForm.submit());
 </script>
 
 <!-- Add Stock Modal -->

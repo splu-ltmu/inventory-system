@@ -15,6 +15,7 @@ class StockController extends Controller
         $q = trim((string) $request->query('q', ''));
         $categoryId = $request->query('category_id');
         $availability = $request->query('availability');
+        $hidden = $request->query('hidden');
 
         $stocks = Stock::with('category')
             ->when($q !== '', function ($query) use ($q) {
@@ -38,6 +39,12 @@ class StockController extends Controller
             })
             ->when($availability === 'out', function ($query) {
                 $query->where('stock', '<=', 0);
+            })
+            ->when($hidden === 'visible', function ($query) {
+                $query->where('hidden', false);
+            })
+            ->when($hidden === 'hidden', function ($query) {
+                $query->where('hidden', true);
             })
             ->orderBy('description')
             ->paginate(15)
